@@ -163,6 +163,67 @@
                 font-size: 8vw;
             }
         }
+        
+        /* --- Chat Overlay Styles --- */
+        #chat-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Above everything else */
+            backdrop-filter: blur(5px);
+        }
+
+        #chat-window {
+            background-color: #1e1e1e;
+            border: 2px solid #555;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 15px;
+            box-shadow: 0 0 30px rgba(100, 200, 255, 0.3); /* Blue glow */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        #chat-output {
+            background-color: #0d0d0d;
+            color: #ccc;
+            height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            line-height: 1.4;
+            border: 1px solid #444;
+            font-family: monospace; /* Monospace font for command feel */
+        }
+
+        #chat-input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #444;
+            color: #f0f0f0;
+            font-size: 1em;
+            outline: none;
+        }
+
+        #chat-input:focus {
+            box-shadow: 0 0 5px var(--highlight-select);
+        }
+
+        .chat-info { color: #88c0d0; } /* Cyan/Blue for info */
+        .chat-error { color: var(--highlight-check); } /* Red for error */
+        .chat-command { color: #a3be8c; } /* Green for user input */
+        /* --- End Chat Overlay Styles --- */
     </style>
 </head>
 <body>
@@ -175,6 +236,20 @@
         </div>
         <button id="reset-button" onclick="resetGame()">New Game</button>
     </div>
+
+    <!-- NEW CHAT/COMMAND CONSOLE -->
+    <div id="chat-container">
+        <div id="chat-window">
+            <div id="chat-output">
+                <span class="chat-info">Welcome to the Command Console.</span><br>
+                <span class="chat-info">Press 'Esc' or '\' to close.</span><br>
+                <span class="chat-info">Type a game name to switch:</span>
+                <span class="chat-command">chess, minesweeper, tictactoe.</span>
+            </div>
+            <input type="text" id="chat-input" placeholder="Type command here and press Enter..." autofocus>
+        </div>
+    </div>
+    <!-- END NEW CHAT/COMMAND CONSOLE -->
 
     <script>
         // Global Game State
@@ -824,6 +899,88 @@
             boardElement.style.pointerEvents = 'auto'; 
         }
 
+
+        // --- Chat/Command Console Logic ---
+
+        const chatContainer = document.getElementById('chat-container');
+        const chatInput = document.getElementById('chat-input');
+        const chatOutput = document.getElementById('chat-output');
+        let isChatOpen = false;
+        
+        const AVAILABLE_GAMES = ['chess', 'minesweeper', 'tictactoe'];
+
+        function logToChat(message, type = 'info') {
+            const span = document.createElement('span');
+            span.className = `chat-${type}`;
+            span.innerHTML = message;
+            chatOutput.appendChild(span);
+            chatOutput.appendChild(document.createElement('br'));
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+        }
+
+        function getBaseUrl() {
+            // Extracts the base path (e.g., https://thatfellerbrayden.qzz.io/)
+            const path = window.location.href;
+            const lastSlash = path.lastIndexOf('/');
+            return path.substring(0, lastSlash + 1);
+        }
+
+        function handleChatCommand() {
+            const command = chatInput.value.trim().toLowerCase();
+            chatInput.value = '';
+
+            if (!command) return;
+
+            logToChat(`> ${command}`, 'command');
+
+            if (AVAILABLE_GAMES.includes(command)) {
+                logToChat(`Switching to ${command.toUpperCase()}...`, 'info');
+                const baseUrl = getBaseUrl();
+                // Redirects to the new game file (e.g., .../minesweeper.html)
+                window.location.replace(`${baseUrl}${command}.html`);
+            } else {
+                logToChat(`Unknown command: "${command}". Try one of: ${AVAILABLE_GAMES.join(', ')}`, 'error');
+            }
+        }
+
+        function toggleChat(open) {
+            isChatOpen = open !== undefined ? open : !isChatOpen;
+            chatContainer.style.display = isChatOpen ? 'flex' : 'none';
+            if (isChatOpen) {
+                // Focus the input when the chat opens
+                setTimeout(() => chatInput.focus(), 10); 
+                // Blur the background game for better focus
+                document.getElementById('game-container').style.filter = 'blur(2px)';
+                document.getElementById('game-container').style.pointerEvents = 'none';
+            } else {
+                // Return focus and interaction to the game
+                chatInput.blur();
+                document.getElementById('game-container').style.filter = 'none';
+                document.getElementById('game-container').style.pointerEvents = 'auto';
+            }
+        }
+
+        // Global key listeners for '\' and 'Enter'
+        document.addEventListener('keydown', (event) => {
+            // '\' key
+            if (event.key === '\\') {
+                event.preventDefault(); 
+                toggleChat();
+            } 
+            // Escape key to close chat
+            else if (event.key === 'Escape' && isChatOpen) {
+                event.preventDefault();
+                toggleChat(false);
+            } 
+        });
+
+        // Ensure chat input handles Enter press
+        chatInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && isChatOpen) {
+                event.preventDefault(); // Prevent default form submission or newline
+                handleChatCommand();
+            }
+        });
 
         // --- Initialization ---
 
