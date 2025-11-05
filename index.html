@@ -137,20 +137,19 @@
   const monthTitle = document.getElementById('monthTitle');
   const calendarContainer = document.getElementById('calendarContainer');
 
-  // Create month buttons
+  // Create month buttons (✅ includes December now)
   months.forEach((m, i) => {
     const btn = document.createElement('button');
     btn.textContent = m;
     btn.onclick = () => showMonth(i);
-    if (i === 10) btn.classList.add('active'); // highlight November initially
+    if (i === 10) btn.classList.add('active'); // start on November
     monthButtons.appendChild(btn);
   });
 
   // Pattern start point
-  const startDate = new Date(2025, 10, 5); // Nov 5 2025 = Gym
+  const startDate = new Date(2025, 10, 5); // Nov 5 2025 = Gym Day
 
   function getPatternForDate(date) {
-    // Skip weekends
     if (date.getDay() === 0 || date.getDay() === 6) return null;
 
     let diff = 0;
