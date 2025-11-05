@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML/JS Chess (Standard FIDE Rules)</title>
+    <!-- Using Unicode chess pieces for standard representation -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+        :root {
+            /* Board Colors */
+            --light-square: #f0d9b5; /* Light Wood */
+            --dark-square: #b58863;  /* Dark Wood */
+            --highlight-move: #90ee90; /* Light Green */
+            --highlight-select: #a8a832; /* Yellow-Green */
+            --highlight-capture: #e76f51; /* Coral Red */
+            --highlight-check: #ff0000; /* Bright Red for Check */
+            --draw-color: #2a9d8f; /* Teal for Draw */
+            --piece-white: #ffffff;
+            --piece-black: #000000;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #333;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        /* Removed rules-note since we are back to standard rules */
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: 90vmin; /* Responsive size based on viewport */
+            max-width: 600px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            border: 6px solid #4a4a4a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .square {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5vmin;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.15s ease-in-out;
+            position: relative;
+        }
+
+        .light { background-color: var(--light-square); }
+        .dark { background-color: var(--dark-square); }
+
+        .square:hover {
+            opacity: 0.9;
+        }
+
+        .selected {
+            background-color: var(--highlight-select) !important;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .valid-move {
+            background-color: var(--highlight-move) !important;
+        }
+
+        .valid-capture {
+            background-color: var(--highlight-capture) !important;
+            border: 4px solid var(--highlight-select);
+            box-sizing: border-box;
+        }
+        
+        .in-check {
+            background-color: var(--highlight-check) !important;
+        }
+
+        /* Piece Styling */
+        .piece {
+            font-size: clamp(30px, 6vmin, 75px);
+            line-height: 1; /* Center vertically */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        .piece.white { color: var(--piece-white); }
+        .piece.black { color: var(--piece-black); }
+
+        /* Game Info and Controls */
+        #message-box {
+            background-color: #2c2c2c;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 6px;
+            font-weight: 700;
+            min-height: 30px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            width: 90vmin;
+            max-width: 600px;
+        }
+        .check-message {
+            background-color: var(--highlight-check) !important;
+            color: white;
+            animation: pulse 0.5s infinite alternate;
+        }
+        .draw-message {
+            background-color: var(--draw-color) !important;
+            color: white;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.8; }
+        }
+
+        #reset-button {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            background-color: #e76f51;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px #c85e44;
+        }
+
+        #reset-button:active {
+            box-shadow: 0 2px #c85e44;
+            transform: translateY(2px);
+        }
+        #reset-button:hover {
+             background-color: #f07b60;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 650px) {
+            #board {
+                width: 95vw;
+                height: 95vw;
+                max-width: 95vw;
+            }
+            .piece {
+                font-size: 8vw;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Standard Single-Player Chess</h1>
+        <div id="message-box">White to move.</div>
+        <div id="board">
+            <!-- Chess squares will be dynamically inserted here -->
+        </div>
+        <button id="reset-button" onclick="resetGame()">New Game</button>
+    </div>
+
+    <script>
+        // Global Game State
+        const PIECES = {
+            'K': { symbol: '&#x265A;', color: 'black', type: 'King' },
+            'Q': { symbol: '&#x265B;', color: 'black', type: 'Queen' },
+            'R': { symbol: '&#x265C;', color: 'black', type: 'Rook' },
+            'B': { symbol: '&#x265D;', color: 'black', type: 'Bishop' },
+            'N': { symbol: '&#x265E;', color: 'black', type: 'Knight' },
+            'P': { symbol: '&#x265F;', color: 'black', type: 'Pawn' },
+            'k': { symbol: '&#x2654;', color: 'white', type: 'King' },
+            'q': { symbol: '&#x2655;', color: 'white', type: 'Queen' },
+            'r': { symbol: '&#x2656;', color: 'white', type: 'Rook' },
+            'b': { symbol: '&#x2657;', color: 'white', type: 'Bishop' },
+            'n': { symbol: '&#x2658;', color: 'white', type: 'Knight' },
+            'p': { symbol: '&#x2659;', color: 'white', type: 'Pawn' },
+            '': { symbol: '', color: '', type: '' }
+        };
+        
+        // Piece values for simple AI evaluation
+        const PIECE_VALUES = {
+            'King': 1000, 'Queen': 9, 'Rook': 5, 'Bishop': 3, 'Knight': 3, 'Pawn': 1
+        };
+
+
+        const INITIAL_BOARD = [
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
+        ];
+
+        let board = JSON.parse(JSON.stringify(INITIAL_BOARD));
+        let currentPlayer = 'white'; // 'white' or 'black' (AI)
+        let selectedSquare = null; // { row: int, col: int }
+        let validMoves = []; // Array of { row: int, col: int }
+        let isGameOver = false;
+        let halfMoveClock = 0; // For 50-move rule (counts half-moves)
+
+        const boardElement = document.getElementById('board');
+        const messageBox = document.getElementById('message-box');
+
+        // --- Core Helper Functions ---
+
+        function getSquareId(r, c) {
+            return `square-${r}-${c}`;
+        }
+        
+        function toAlgebraic(r, c) {
+            return `${String.fromCharCode(97 + c)}${8 - r}`;
+        }
+
+        function getPiece(r, c, currentBoard = board) {
+            if (!isWithinBounds(r, c)) return PIECES[''];
+            const pieceCode = currentBoard[r][c];
+            return PIECES[pieceCode] || PIECES[''];
+        }
+
+        function isMoveValid(r, c) {
+            return validMoves.some(move => move.row === r && move.col === c);
+        }
+
+        function isWithinBounds(r, c) {
+            return r >= 0 && r < 8 && c >= 0 && c < 8;
+        }
+
+        function isCurrentPlayerPiece(r, c) {
+            const piece = getPiece(r, c);
+            return piece.color === currentPlayer;
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.square').forEach(sq => {
+                sq.classList.remove('selected', 'valid-move', 'valid-capture', 'in-check');
+            });
+        }
+
+        // --- Board Rendering and Setup ---
+
+        function renderBoard() {
+            boardElement.innerHTML = ''; 
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const square = document.createElement('div');
+                    const isLight = (r + c) % 2 === 0;
+                    
+                    square.id = getSquareId(r, c);
+                    square.className = `square ${isLight ? 'light' : 'dark'}`;
+                    square.dataset.row = r;
+                    square.dataset.col = c;
+                    square.onclick = () => handleSquareClick(r, c);
+
+                    const pieceData = getPiece(r, c);
+                    if (pieceData.symbol) {
+                        const pieceElement = document.createElement('span');
+                        pieceElement.className = `piece ${pieceData.color}`;
+                        pieceElement.innerHTML = pieceData.symbol;
+                        square.appendChild(pieceElement);
+                    }
+
+                    boardElement.appendChild(square);
+                }
+            }
+            
+            // Highlight the king if it's in check
+            const kingPosition = findKing(currentPlayer);
+            if (kingPosition && isKingInCheck(currentPlayer)) {
+                document.getElementById(getSquareId(kingPosition.r, kingPosition.c)).classList.add('in-check');
+            }
+
+            // Disable clicks if the game is over
+            boardElement.style.pointerEvents = isGameOver ? 'none' : 'auto';
+        }
+
+        function updateMessage(msg, isCheck = false, isError = false, isDraw = false) {
+            messageBox.textContent = msg;
+            messageBox.classList.remove('check-message', 'draw-message');
+            
+            let bgColor = '#2c2c2c';
+            if (isCheck) {
+                 messageBox.classList.add('check-message');
+                 bgColor = 'var(--highlight-check)';
+            } else if (isDraw) {
+                messageBox.classList.add('draw-message');
+                bgColor = 'var(--draw-color)';
+            }
+            messageBox.style.backgroundColor = bgColor; 
+        }
+
+        // --- Check and King Safety Logic (STRICT CHESS RULES) ---
+
+        function findKing(color, currentBoard = board) {
+            const kingCode = color === 'white' ? 'k' : 'K';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (currentBoard[r][c] === kingCode) {
+                        return { r, c };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function isSquareAttacked(r, c, attackerColor, currentBoard = board) {
+            for (let startR = 0; startR < 8; startR++) {
+                for (let startC = 0; startC < 8; startC++) {
+                    const piece = getPiece(startR, startC, currentBoard);
+
+                    if (piece.color === attackerColor) {
+                        const pseudoMoves = calculatePseudoLegalMoves(startR, startC, currentBoard);
+
+                        if (pseudoMoves.some(move => move.row === r && move.col === c)) {
+                            // Pawns only attack diagonally
+                            if (piece.type === 'Pawn') {
+                                const dr = Math.abs(r - startR);
+                                const dc = Math.abs(c - startC);
+                                if (dr === 1 && dc === 1) {
+                                    return true;
+                                }
+                            } else {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function isKingInCheck(color, currentBoard = board) {
+            const kingPos = findKing(color, currentBoard);
+            if (!kingPos) return false; 
+
+            const attackerColor = color === 'white' ? 'black' : 'white';
+            return isSquareAttacked(kingPos.r, kingPos.c, attackerColor, currentBoard);
+        }
+
+        /**
+         * Checks if the King is safe after a move. This is the definition of a LEGAL move.
+         */
+        function isKingSafeAfterMove(startR, startC, endR, endC) {
+            const color = getPiece(startR, startC).color;
+            if (!color) return false;
+
+            const simulatedBoard = board.map(arr => [...arr]);
+            const pieceCode = simulatedBoard[startR][startC];
+            simulatedBoard[endR][endC] = pieceCode;
+            simulatedBoard[startR][startC] = '';
+
+            return !isKingInCheck(color, simulatedBoard);
+        }
+        
+        // --- Piece Movement Logic ---
+
+        const STRAIGHT_DIRS = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
+        const DIAGONAL_DIRS = [{ dr: -1, dc: -1 }, { dr: -1, dc: 1 }, { dr: 1, dc: -1 }, { dr: 1, dc: 1 }];
+        const KNIGHT_MOVES = [
+            { dr: -2, dc: -1 }, { dr: -2, dc: 1 }, { dr: -1, dc: -2 }, { dr: -1, dc: 2 },
+            { dr: 1, dc: -2 }, { dr: 1, dc: 2 }, { dr: 2, dc: -1 }, { dr: 2, dc: 1 }
+        ];
+
+        function addSlidingMoves(startR, startC, directions, pieceColor, moves, currentBoard) {
+            for (const { dr, dc } of directions) {
+                for (let i = 1; i < 8; i++) {
+                    const r = startR + dr * i;
+                    const c = startC + dc * i;
+
+                    if (!isWithinBounds(r, c)) break;
+
+                    const targetPiece = getPiece(r, c, currentBoard);
+
+                    if (targetPiece.type === '') {
+                        moves.push({ row: r, col: c, type: 'move' });
+                    } else if (targetPiece.color !== pieceColor) {
+                        moves.push({ row: r, col: c, type: 'capture' });
+                        break; 
+                    } else {
+                        break; 
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Calculates pseudo-legal moves for a piece (doesn't check for King safety).
+         */
+        function calculatePseudoLegalMoves(r, c, currentBoard = board) {
+            const pieceData = getPiece(r, c, currentBoard);
+            if (!pieceData.type) return [];
+
+            const color = pieceData.color;
+            let moves = [];
+            const isWhite = color === 'white';
+            const moveDirection = isWhite ? -1 : 1;
+            const startRow = isWhite ? 6 : 1;
+
+            switch (pieceData.type) {
+                case 'Pawn':
+                    // 1. One step forward
+                    let nextR = r + moveDirection;
+                    if (isWithinBounds(nextR, c) && getPiece(nextR, c, currentBoard).type === '') {
+                        moves.push({ row: nextR, col: c, type: 'move' });
+                        // 2. Two steps forward (first move only)
+                        if (r === startRow) {
+                            let twoStepsR = r + moveDirection * 2;
+                            if (getPiece(twoStepsR, c, currentBoard).type === '') {
+                                moves.push({ row: twoStepsR, col: c, type: 'move' });
+                            }
+                        }
+                    }
+                    // 3. Captures
+                    for (const dc of [-1, 1]) {
+                        const capR = r + moveDirection;
+                        const capC = c + dc;
+                        if (isWithinBounds(capR, capC)) {
+                            const target = getPiece(capR, capC, currentBoard);
+                            if (target.type !== '' && target.color !== color) {
+                                moves.push({ row: capR, col: capC, type: 'capture' });
+                            }
+                        }
+                    }
+                    break;
+
+                case 'Rook': addSlidingMoves(r, c, STRAIGHT_DIRS, color, moves, currentBoard); break;
+                case 'Bishop': addSlidingMoves(r, c, DIAGONAL_DIRS, color, moves, currentBoard); break;
+                case 'Queen': addSlidingMoves(r, c, STRAIGHT_DIRS.concat(DIAGONAL_DIRS), color, moves, currentBoard); break;
+                
+                case 'Knight':
+                    for (const { dr, dc } of KNIGHT_MOVES) {
+                        const newR = r + dr;
+                        const newC = c + dc;
+                        if (isWithinBounds(newR, newC)) {
+                            const target = getPiece(newR, newC, currentBoard);
+                            if (target.color !== color) {
+                                moves.push({ row: newR, col: newC, type: target.type === '' ? 'move' : 'capture' });
+                            }
+                        }
+                    }
+                    break;
+
+                case 'King':
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue; 
+                            const newR = r + dr;
+                            const newC = c + dc;
+                            if (isWithinBounds(newR, newC)) {
+                                const target = getPiece(newR, newC, currentBoard);
+                                if (target.color !== color) {
+                                    moves.push({ row: newR, col: newC, type: target.type === '' ? 'move' : 'capture' });
+                                }
+                            }
+                        }
+                    }
+                    break;
+            }
+
+            return moves;
+        }
+
+        /**
+         * Filters pseudo-legal moves for King safety. This is used by both the Human and AI now.
+         */
+        function calculateLegalMoves(r, c) {
+            const pseudoMoves = calculatePseudoLegalMoves(r, c, board);
+            return pseudoMoves.filter(move => isKingSafeAfterMove(r, c, move.row, move.col));
+        }
+
+        // --- AI Logic ---
+
+        /**
+         * Finds all legal moves for a given player.
+         */
+        function findLegalMovesForPlayer(color) {
+            const allMoves = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = getPiece(r, c);
+                    if (piece.color === color) {
+                        // Both players now use strict legal move calculation
+                        const movesForPiece = calculateLegalMoves(r, c); 
+                        
+                        movesForPiece.forEach(move => {
+                            const capturedPiece = getPiece(move.row, move.col);
+                            const score = PIECE_VALUES[capturedPiece.type] || 0;
+                            
+                            // Add a small random offset to non-capturing moves to break AI loops
+                            let finalScore = score;
+                            if (score === 0) {
+                                finalScore += Math.random() * 0.5; 
+                            }
+
+                            allMoves.push({
+                                startR: r,
+                                startC: c,
+                                targetR: move.row,
+                                targetC: move.col,
+                                score: finalScore
+                            });
+                        });
+                    }
+                }
+            }
+            return allMoves;
+        }
+
+        function makeAiMove() {
+            if (isGameOver) return;
+            
+            boardElement.style.pointerEvents = 'none';
+            updateMessage("Black (AI) is thinking...", false, false);
+
+            setTimeout(() => {
+                const legalMoves = findLegalMovesForPlayer('black');
+                
+                if (legalMoves.length === 0) {
+                    checkGameEndConditions();
+                    return;
+                }
+
+                // AI move selection logic
+                let bestScore = -1;
+                let bestMoves = [];
+
+                legalMoves.forEach(move => {
+                    if (move.score > bestScore) {
+                        bestScore = move.score;
+                        bestMoves = [move];
+                    } else if (move.score === bestScore) {
+                        bestMoves.push(move);
+                    }
+                });
+
+                const randomMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+
+                const { startR, startC, targetR, targetC } = randomMove;
+                const pieceCode = board[startR][startC];
+                const pieceType = PIECES[pieceCode].type;
+                
+                const isPawnMove = pieceType === 'Pawn';
+                const isCapture = board[targetR][targetC] !== '';
+
+                // Execute the move
+                board[targetR][targetC] = pieceCode;
+                board[startR][startC] = '';
+                
+                // Update 50-move clock
+                if (isPawnMove || isCapture) {
+                    halfMoveClock = 0;
+                } else {
+                    halfMoveClock++;
+                }
+
+                // Handle Pawn Promotion (Black)
+                if (PIECES[pieceCode].type === 'Pawn' && targetR === 7) {
+                    board[targetR][targetC] = 'Q';
+                }
+
+                currentPlayer = 'white';
+                renderBoard();
+                checkGameEndConditions();
+                
+                boardElement.style.pointerEvents = 'auto'; 
+            }, 500); 
+        }
+        
+        // --- Game End Logic ---
+
+        /** Counts all pieces on the board to check for insufficient material. */
+        function countMaterial() {
+            let pieceCounts = { white: { K: 0, Q: 0, R: 0, B: 0, N: 0, P: 0 }, black: { K: 0, Q: 0, R: 0, B: 0, N: 0, P: 0 } };
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const code = board[r][c];
+                    if (code !== '') {
+                        const color = PIECES[code].color;
+                        // Use the uppercase type code for counting
+                        const typeCode = PIECES[code].type === 'Pawn' ? 'P' : code.toUpperCase(); 
+                        pieceCounts[color][typeCode]++;
+                    }
+                }
+            }
+            return pieceCounts;
+        }
+
+        /** Checks for common draw scenarios where neither side has enough material to checkmate. */
+        function checkInsufficientMaterial() {
+            const counts = countMaterial();
+            const whitePieces = counts.white;
+            const blackPieces = counts.black;
+
+            // K vs K (Trivial)
+            const whiteMaterialCount = whitePieces.Q + whitePieces.R + whitePieces.P;
+            const blackMaterialCount = blackPieces.Q + blackPieces.R + blackPieces.P;
+            
+            // If all heavy pieces and pawns are gone
+            if (whiteMaterialCount === 0 && blackMaterialCount === 0) {
+                const whiteMinorPieces = whitePieces.B + whitePieces.N;
+                const blackMinorPieces = blackPieces.B + blackPieces.N;
+
+                // K vs K (no minor pieces left)
+                if (whiteMinorPieces === 0 && blackMinorPieces === 0) return true;
+
+                // K vs K+B or K vs K+N (not enough material to force mate)
+                if (whiteMinorPieces === 1 && blackMinorPieces === 0) return true;
+                if (whiteMinorPieces === 0 && blackMinorPieces === 1) return true;
+                
+                // K+N vs K+N or K+B vs K+B (draw is possible but difficult to check simply, we assume draw here)
+                // K+B vs K+N is NOT a draw! But K+B vs K+B with same color bishops is a draw.
+                // For simplicity, we only check the absolute minimum draws (K vs K, K+N vs K, K+B vs K)
+            }
+            return false;
+        }
+        
+        /** Handles all draw conditions, displaying a message and scheduling a reset. */
+        function handleDraw(msg) {
+            isGameOver = true;
+            updateMessage(msg, false, false, true); // isDraw = true
+            boardElement.style.pointerEvents = 'none';
+
+            // Wait 5 seconds, then reset
+            setTimeout(() => {
+                resetGame();
+            }, 5000); // 5000 ms = 5 seconds
+        }
+
+
+        function checkGameEndConditions() {
+            // 1. 50-Move Rule Check
+            if (halfMoveClock >= 100) {
+                handleDraw(`DRAW by 50-Move Rule (100 half-moves without major action). Resetting in 5 seconds...`);
+                return;
+            }
+            
+            // 2. Insufficient Material Check
+            if (checkInsufficientMaterial()) {
+                handleDraw(`DRAW by Insufficient Material (Too few pieces to force checkmate). Resetting in 5 seconds...`);
+                return;
+            }
+            
+            // 3. Stalemate / Checkmate Check
+            const playerToCheck = currentPlayer;
+            const legalMoves = findLegalMovesForPlayer(playerToCheck);
+            const inCheck = isKingInCheck(playerToCheck);
+
+            if (legalMoves.length === 0) {
+                if (inCheck) {
+                    isGameOver = true;
+                    // Checkmate does NOT reset automatically
+                    updateMessage(`${playerToCheck.toUpperCase()} is in CHECKMATE! ${playerToCheck === 'white' ? 'Black' : 'White'} wins!`, true, true);
+                } else {
+                    handleDraw(`STALEMATE! Game is a draw. Resetting in 5 seconds...`);
+                }
+            } else {
+                // Standard message update
+                if (inCheck) {
+                    updateMessage(`${playerToCheck.charAt(0).toUpperCase() + playerToCheck.slice(1)} is in CHECK! (Half-moves: ${halfMoveClock})`, true, false);
+                } else {
+                    updateMessage(`${playerToCheck.charAt(0).toUpperCase() + playerToCheck.slice(1)} to move. (Half-moves: ${halfMoveClock})`, false, false);
+                }
+            }
+        }
+
+        // --- Game Flow and Event Handling (Human Player) ---
+
+        function highlightValidMoves() {
+            validMoves.forEach(move => {
+                const squareElement = document.getElementById(getSquareId(move.row, move.col));
+                if (squareElement) {
+                    const pieceOnTarget = getPiece(move.row, move.col);
+                    if (pieceOnTarget.type !== '') {
+                        squareElement.classList.add('valid-capture');
+                    } else {
+                        squareElement.classList.add('valid-move');
+                    }
+                }
+            });
+        }
+
+        /**
+         * Makes the move for the human player (White).
+         */
+        function makeMove(targetR, targetC) {
+            const { row: startR, col: startC } = selectedSquare;
+            const pieceCode = board[startR][startC];
+            const pieceType = PIECES[pieceCode].type;
+            
+            // Move is guaranteed to be legal here because it was filtered in handleSelection
+
+            const isPawnMove = pieceType === 'Pawn';
+            const isCapture = board[targetR][targetC] !== '';
+
+            // 1. Update the board state
+            board[targetR][targetC] = pieceCode;
+            board[startR][startC] = '';
+
+            // 2. Update 50-move clock
+            if (isPawnMove || isCapture) {
+                halfMoveClock = 0;
+            } else {
+                halfMoveClock++;
+            }
+
+            // 3. Handle Pawn Promotion (White)
+            if (isPawnMove && targetR === 0) { 
+                board[targetR][targetC] = 'q'; 
+            }
+
+            // 4. Clear selection and change turn
+            selectedSquare = null;
+            validMoves = [];
+            currentPlayer = 'black'; 
+            
+            // 5. Re-render the board 
+            renderBoard();
+            
+            // 6. Check game end conditions and display normal message
+            checkGameEndConditions(); 
+
+            // 7. Trigger AI move if game is not over
+            if (!isGameOver) {
+                makeAiMove();
+            }
+        }
+
+        function handleSquareClick(r, c) {
+            if (currentPlayer === 'black' || isGameOver) {
+                updateMessage(isGameOver ? "Game Over! Press New Game." : "Please wait for Black's move.", true, isGameOver);
+                return;
+            }
+
+            clearHighlights();
+
+            if (selectedSquare) {
+                // Case 1: Destination click (Move)
+                if (isMoveValid(r, c)) {
+                    makeMove(r, c);
+                    return;
+                } 
+                
+                const { row: startR, col: startC } = selectedSquare;
+
+                if (r === startR && c === startC) {
+                    // Case 2: Deselect the current piece
+                    selectedSquare = null;
+                    validMoves = [];
+                    checkGameEndConditions(); 
+                    return;
+                } else if (isCurrentPlayerPiece(r, c)) {
+                    // Case 3: Reselect a different piece
+                    handleSelection(r, c);
+                } else {
+                    // Case 4: Clicked an empty/opponent square that is not a valid move
+                    updateMessage("That is not a valid move for the selected piece.", true, true);
+                }
+                
+            } else {
+                // Case 5: Select a piece
+                if (isCurrentPlayerPiece(r, c)) {
+                    handleSelection(r, c);
+                } else {
+                    updateMessage("Select one of your pieces (White) to move.", false, false);
+                }
+            }
+        }
+        
+        /**
+         * Logic for selecting a piece and highlighting its moves.
+         * Now uses the strict legal move calculator for the human player (White).
+         */
+        function handleSelection(r, c) {
+            selectedSquare = { row: r, col: c };
+            // IMPORTANT: Now enforcing FIDE rules for White.
+            validMoves = calculateLegalMoves(r, c); 
+            
+            if (validMoves.length > 0) {
+                // Highlight the selected square and its valid moves
+                document.getElementById(getSquareId(r, c)).classList.add('selected');
+                highlightValidMoves();
+                updateMessage(`Selected ${getPiece(r, c).type} at ${toAlgebraic(r, c)}. Choose destination.`);
+            } else {
+                // Piece cannot move at all (it might be pinned!)
+                selectedSquare = null;
+                updateMessage("This piece has no legal moves.", true, true);
+            }
+        }
+
+
+        function resetGame() {
+            board = JSON.parse(JSON.stringify(INITIAL_BOARD));
+            currentPlayer = 'white';
+            selectedSquare = null;
+            validMoves = [];
+            isGameOver = false;
+            halfMoveClock = 0; 
+            renderBoard();
+            clearHighlights();
+            // Ensure the message box style is clean after a draw timeout
+            messageBox.style.backgroundColor = '#2c2c2c'; 
+            messageBox.classList.remove('check-message', 'draw-message'); 
+            // Changed "White to move. Game Reset." to just "White to move."
+            updateMessage("White to move.", false, false);
+            boardElement.style.pointerEvents = 'auto'; 
+        }
+
+
+        // --- Initialization ---
+
+        window.onload = function() {
+            resetGame();
+        };
+
+    </script>
+</body>
+</html>
