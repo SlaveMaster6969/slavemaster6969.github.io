@@ -3,34 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>November 2025 Calendar</title>
+<title>Gym & Art Calendar 2025</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    text-align: center;
     background: #f7f7f7;
+    color: #333;
+    text-align: center;
   }
   h1 {
-    margin-top: 20px;
+    margin: 20px 0 5px;
+  }
+  .calendar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .month {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 280px;
+    margin: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   table {
-    width: 80%;
-    margin: 20px auto;
+    width: 100%;
     border-collapse: collapse;
-  }
-  th, td {
-    width: 14.28%;
-    border: 1px solid #ccc;
-    height: 100px;
-    vertical-align: top;
-    padding: 5px;
   }
   th {
     background: #333;
     color: white;
+    padding: 5px;
   }
   td {
-    background: white;
+    width: 14.28%;
+    height: 80px;
+    border: 1px solid #ddd;
+    vertical-align: top;
+    font-size: 14px;
+    padding: 5px;
   }
   .gym {
     color: #007BFF;
@@ -47,51 +59,109 @@
 </style>
 </head>
 <body>
-<h1>November 2025</h1>
-<table>
-  <tr>
-    <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
-  </tr>
-  <tr>
-    <td class="weekend"></td>
-    <td></td>
-    <td></td>
-    <td class="gym">5<br>Gym Day</td>
-    <td class="art">6<br>Art Day</td>
-    <td class="gym">7<br>Gym Day</td>
-    <td class="weekend">8</td>
-  </tr>
-  <tr>
-    <td class="weekend">9</td>
-    <td class="art">10<br>Art Day</td>
-    <td class="gym">11<br>Gym Day</td>
-    <td class="art">12<br>Art Day</td>
-    <td class="gym">13<br>Gym Day</td>
-    <td class="art">14<br>Art Day</td>
-    <td class="weekend">15</td>
-  </tr>
-  <tr>
-    <td class="weekend">16</td>
-    <td class="gym">17<br>Gym Day</td>
-    <td class="art">18<br>Art Day</td>
-    <td class="gym">19<br>Gym Day</td>
-    <td class="art">20<br>Art Day</td>
-    <td class="gym">21<br>Gym Day</td>
-    <td class="weekend">22</td>
-  </tr>
-  <tr>
-    <td class="weekend">23</td>
-    <td class="art">24<br>Art Day</td>
-    <td class="gym">25<br>Gym Day</td>
-    <td class="art">26<br>Art Day</td>
-    <td class="gym">27<br>Gym Day</td>
-    <td class="art">28<br>Art Day</td>
-    <td class="weekend">29</td>
-  </tr>
-  <tr>
-    <td class="weekend">30</td>
-    <td></td><td></td><td></td><td></td><td></td><td></td>
-  </tr>
-</table>
+
+<h1>Gym & Art Calendar – 2025</h1>
+<div class="calendar" id="calendar"></div>
+
+<script>
+  const calendarContainer = document.getElementById('calendar');
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Start pattern from Nov 5, 2025 = Gym Day
+  let pattern = "gym";
+  const startDate = new Date(2025, 10, 5); // Month index 10 = November
+
+  // Create an object to remember what the last pattern was before each date
+  const dayPattern = {};
+
+  // Generate calendar for each month
+  for (let m = 0; m < 12; m++) {
+    const monthDiv = document.createElement('div');
+    monthDiv.classList.add('month');
+    const title = document.createElement('h2');
+    title.textContent = months[m];
+    monthDiv.appendChild(title);
+
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
+      const th = document.createElement('th');
+      th.textContent = d;
+      headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    const firstDay = new Date(2025, m, 1).getDay();
+    const daysInMonth = new Date(2025, m + 1, 0).getDate();
+    let date = 1;
+    for (let r = 0; r < 6; r++) {
+      const row = document.createElement('tr');
+      for (let c = 0; c < 7; c++) {
+        const cell = document.createElement('td');
+        if (r === 0 && c < firstDay || date > daysInMonth) {
+          cell.textContent = '';
+        } else {
+          cell.textContent = date;
+          const current = new Date(2025, m, date);
+          const dayOfWeek = current.getDay();
+
+          // Skip weekends
+          if (dayOfWeek === 0 || dayOfWeek === 6) {
+            cell.classList.add('weekend');
+          } else {
+            // Determine pattern based on previous weekday
+            const prev = new Date(current);
+            prev.setDate(prev.getDate() - 1);
+
+            // Skip weekends when checking previous day
+            while (prev.getDay() === 0 || prev.getDay() === 6) {
+              prev.setDate(prev.getDate() - 1);
+            }
+
+            // Determine label
+            if (current < startDate) {
+              // Before Nov 5, 2025, figure out by stepping backward
+              // We'll reverse the pattern logically
+              let diff = 0;
+              let temp = new Date(startDate);
+              while (temp > current) {
+                temp.setDate(temp.getDate() - 1);
+                if (temp.getDay() !== 0 && temp.getDay() !== 6) diff++;
+              }
+              pattern = (diff % 2 === 0) ? 'gym' : 'art';
+            } else {
+              // After or same as Nov 5, continue pattern forward
+              let diff = 0;
+              let temp = new Date(startDate);
+              while (temp < current) {
+                temp.setDate(temp.getDate() + 1);
+                if (temp.getDay() !== 0 && temp.getDay() !== 6) diff++;
+              }
+              pattern = (diff % 2 === 0) ? 'gym' : 'art';
+            }
+
+            if (pattern === 'gym') {
+              cell.classList.add('gym');
+              cell.innerHTML += '<br>Gym Day';
+            } else {
+              cell.classList.add('art');
+              cell.innerHTML += '<br>Art Day';
+            }
+          }
+          date++;
+        }
+        row.appendChild(cell);
+      }
+      table.appendChild(row);
+      if (date > daysInMonth) break;
+    }
+
+    monthDiv.appendChild(table);
+    calendarContainer.appendChild(monthDiv);
+  }
+</script>
 </body>
 </html>
