@@ -22,6 +22,7 @@
     flex-direction: column;
     align-items: stretch;
     padding-top: 20px;
+    overflow-y: auto; /* Allows scrolling when content is too tall */
   }
 
   #sidebar h2 {
@@ -137,17 +138,17 @@
   const monthTitle = document.getElementById('monthTitle');
   const calendarContainer = document.getElementById('calendarContainer');
 
-  // Create month buttons (✅ includes December now)
+  // Create month buttons
   months.forEach((m, i) => {
     const btn = document.createElement('button');
     btn.textContent = m;
     btn.onclick = () => showMonth(i);
-    if (i === 10) btn.classList.add('active'); // start on November
+    if (i === 10) btn.classList.add('active'); // Start on November by default
     monthButtons.appendChild(btn);
   });
 
-  // Pattern start point
-  const startDate = new Date(2025, 10, 5); // Nov 5 2025 = Gym Day
+  // Pattern start point: Nov 5, 2025 = Gym Day
+  const startDate = new Date(2025, 10, 5);
 
   function getPatternForDate(date) {
     if (date.getDay() === 0 || date.getDay() === 6) return null;
