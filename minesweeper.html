@@ -48,13 +48,14 @@
         }
 
         .counter {
-            font-size: 2em;
+            /* INCREASED SIZE */
+            font-size: 2.5em; 
             color: #e74c3c; /* Red LED style */
             background-color: #1a1a1a;
             padding: 4px 10px;
             border-radius: 4px;
             border: 1px inset #7f8c8d;
-            min-width: 60px;
+            min-width: 80px; /* Adjusted min-width for larger font */
             text-align: right;
             user-select: none;
         }
@@ -68,8 +69,9 @@
         }
 
         .cell {
-            width: 30px; /* Base size for cells */
-            height: 30px;
+            /* INCREASED SIZE */
+            width: 45px; 
+            height: 45px;
             background-color: #a8a8a8;
             border: 3px solid #ccc;
             border-style: outset;
@@ -77,7 +79,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            /* INCREASED FONT SIZE */
+            font-size: 1.8rem; 
             font-weight: bold;
             color: #333;
             user-select: none;
@@ -89,9 +92,9 @@
             .cell {
                 width: calc(90vw / var(--cols));
                 height: calc(90vw / var(--cols));
-                font-size: 3.5vw;
-                min-width: 15px;
-                min-height: 15px;
+                font-size: 4vw; /* Slightly larger font on mobile */
+                min-width: 20px;
+                min-height: 20px;
             }
             #game-container {
                 padding: 10px;
@@ -99,8 +102,10 @@
         }
         @media (min-width: 601px) and (max-width: 900px) {
             .cell {
-                width: 25px;
-                height: 25px;
+                /* Adjusted intermediate size */
+                width: 35px;
+                height: 35px;
+                font-size: 1.4rem;
             }
         }
 
@@ -120,13 +125,13 @@
         .mine {
             background-color: #e74c3c; /* Red explosion */
             color: black;
-            font-size: 1.5rem;
+            font-size: 2rem; /* Adjusted mine icon size */
         }
         
         /* Flag styles */
         .flag {
             color: #3498db; /* Blue flag */
-            font-size: 1.4rem;
+            font-size: 1.8rem; /* Adjusted flag size */
         }
         
         /* Question Mark style */
@@ -157,7 +162,7 @@
             padding: 10px 15px;
             border-radius: 8px;
             font-family: 'VT323', monospace;
-            font-size: 1.2em;
+            font-size: 1.5em; /* Increased control font size */
             cursor: pointer;
             border: 2px solid #f1c40f;
             box-shadow: 0 4px #e67e22;
@@ -187,9 +192,10 @@
 
         #message {
             margin-top: 15px;
-            font-size: 1.5em;
+            /* INCREASED FONT SIZE */
+            font-size: 2em; 
             color: #f1c40f;
-            min-height: 30px;
+            min-height: 40px; /* Adjusted min-height */
             text-align: center;
         }
         
