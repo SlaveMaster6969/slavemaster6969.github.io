@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dolphin Radar Proxy URL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f7f7f7;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Enter Website URL</h2>
+    <input type="text" id="urlInput" placeholder="e.g. youtube.com">
+    <button onclick="generateProxyURL()">Generate Proxy URL</button>
+    <p id="result" style="margin-top: 15px;"></p>
+</div>
+
+<script>
+    function generateProxyURL() {
+        let userInput = document.getElementById('urlInput').value.trim();
+
+        // Check if the URL starts with 'https://', otherwise add it
+        if (!userInput.startsWith('https://')) {
+            if (!userInput.startsWith('http://')) {
+                userInput = 'https://' + userInput; // Add https:// if no protocol is given
+            }
+        }
+
+        // Create the full URL with the image proxy
+        const proxyURL = 'https://www.dolphinradar.com/n-api/image-proxy?url=' + encodeURIComponent(userInput);
+
+        // Show the result to the user
+        document.getElementById('result').innerHTML = `
+            <strong>Generated Proxy URL:</strong><br>
+            <a href="${proxyURL}" target="_blank">${proxyURL}</a>
+        `;
+    }
+</script>
+
+</body>
+</html>
