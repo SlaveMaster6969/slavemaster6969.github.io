@@ -41,6 +41,7 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
+        position: relative;
     }
 
     #chat-output {
@@ -70,6 +71,18 @@
     .chat-info { color: #88c0d0; } 
     .chat-error { color: #e74c3c; } 
     .chat-command { color: #a3be8c; }
+
+    /* Visitor counter styling */
+    #visitor-counter {
+        margin-top: 10px;
+        font-size: 0.85em;
+        text-align: center;
+        color: #ffcc00;
+        font-family: monospace;
+        border-top: 1px solid #555;
+        padding-top: 5px;
+        text-shadow: 0 0 5px #ffcc00;
+    }
 </style>
 </head>
 <body>
@@ -83,12 +96,16 @@
             <span class="chat-command">chess, minesweeper, tictactoe, websiteunlock</span>
         </div>
         <input type="text" id="chat-input" placeholder="Type command here and press Enter..." autofocus>
+
+        <!-- Visitor Counter -->
+        <div id="visitor-counter">Loading visitor count...</div>
     </div>
 </div>
 
 <script>
     const chatInput = document.getElementById('chat-input');
     const chatOutput = document.getElementById('chat-output');
+    const visitorCounter = document.getElementById('visitor-counter');
 
     const COMMANDS = {
         'chess': '/chess.html',
@@ -129,6 +146,19 @@
     });
 
     chatInput.focus();
+
+    // ---------------------------
+    // Visitor Counter Fetch
+    // ---------------------------
+    fetch('https://visitcount.brayden-d3c.workers.dev/?increment=true')
+      .then(res => res.json())
+      .then(data => {
+        visitorCounter.textContent = `This page has been visited ${data.count} time${data.count === 1 ? '' : 's'}.`;
+      })
+      .catch(err => {
+        visitorCounter.textContent = "Visitor count unavailable.";
+        console.error('Visitor counter error:', err);
+      });
 </script>
 </body>
 </html>
