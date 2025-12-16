@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Start Cloud Browser Session V2</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 50px; 
+            background-color: #f4f7f6;
+        }
+        h1 {
+            color: #333;
+        }
+        .warning-box {
+            background-color: #fff3cd; 
+            color: #856404;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 500px;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+        .spinner { 
+            border: 4px solid #e0e0e0; 
+            border-top: 4px solid #007bff; /* Blue spinner */
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+            margin: 20px auto; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .error { 
+            color: #dc3545; 
+            font-weight: bold; 
+            border: 1px solid #dc3545;
+            padding: 10px;
+            margin: 20px auto;
+            max-width: 400px;
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cloud Browser Session Initializer</h1>
+    
+    <div class="warning-box">
+        ⚠️ **Important Session Limit:** <br>
+        Sessions are typically limited to **about 5 minutes** of activity. To continue working after the time limit, you will need to **close this tab and open the `start_session_v2.html` file again** to generate a new session and `liveUrl`.
+    </div>
+    
+    <div class="spinner" id="loading-spinner"></div>
+    <p id="status-message">Requesting new session from API...</p>
+    <p>
+        <a id="live-link" href="#" style="display:none; color: #28a745; font-weight: bold;">
+            Click here if not redirected automatically
+        </a>
+    </p>
+
+    <script>
+        // ----------------------------------------------------------------------------------
+        // !!! CRITICAL SECURITY WARNING: DO NOT USE THIS FILE PUBLICLY !!!
+        // Anyone can see this key. Use a secure backend server for production environments.
+        // ----------------------------------------------------------------------------------
+        
+        // --- !!! 1. REPLACE THE API KEY BELOW !!! ---
+        const API_KEY = "bu_w0Q-M4FuLiw0bM47S_y1pvuttA_yxHpgyRMPdbxdHjs"; 
+        
+        // --- 2. API Endpoint and Request Configuration ---
+        const API_ENDPOINT = "https://api.browser-use.com/api/v2/sessions";
+        const SESSION_BODY = {
+            "startUrl": "https://Google.com",
+            "proxyCountryCode": "us"
+            // Add other V2 options here if needed.
+        };
+        // ----------------------------------------------------------------------------------
+
+        const statusMessage = document.getElementById('status-message');
+        const liveLink = document.getElementById('live-link');
+        const spinner = document.getElementById('loading-spinner');
+
+        async function createSessionAndRedirect() {
+            try {
+                // 1. Make the POST request
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'X-Browser-Use-API-Key': API_KEY, 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(SESSION_BODY)
+                });
+
+                // Check for HTTP errors (e.g., 401 Unauthorized, 400 Bad Request)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage = errorText;
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.message || errorText;
+                    } catch {} 
+
+                    throw new Error(`[${response.status} ${response.statusText}] ${errorMessage}`);
+                }
+
+                // 2. Parse the successful JSON response
+                const data = await response.json();
+                const liveUrl = data.liveUrl; 
+
+                // 3. Handle the live URL
+                if (liveUrl) {
+                    statusMessage.textContent = "Success! Redirecting to Live Session View...";
+                    spinner.style.display = 'none';
+                    liveLink.href = liveUrl;
+                    liveLink.style.display = 'inline';
+
+                    // Final step: Redirect the browser
+                    window.location.href = liveUrl;
+                } else {
+                    throw new Error("API responded successfully but the required 'liveUrl' was missing from the response.");
+                }
+
+            } catch (error) {
+                // Display error message
+                spinner.style.display = 'none';
+                statusMessage.className = 'error';
+                statusMessage.innerHTML = `<strong>Session Creation Error:</strong><br>${error.message}<br><br>Check the browser console (F12) for detailed network errors.`;
+                console.error("Browser Use API Error:", error);
+            }
+        }
+
+        createSessionAndRedirect();
+    </script>
+</body>
+</html>
