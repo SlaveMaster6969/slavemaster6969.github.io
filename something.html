@@ -23,6 +23,10 @@
             border-radius: 5px;
             font-size: 0.95em;
         }
+        .disclaimer-title {
+            font-weight: bold;
+            text-decoration: underline;
+        }
         .spinner { 
             border: 4px solid #e0e0e0; 
             border-top: 4px solid #007bff; /* Blue spinner */
@@ -45,18 +49,27 @@
             max-width: 400px;
             background-color: #f8d7da;
         }
+        #countdown {
+            font-weight: bold;
+            color: #007bff;
+        }
     </style>
 </head>
 <body>
     <h1>Cloud Browser Session Initializer</h1>
     
     <div class="warning-box">
-        ⚠️ **Important Session Limit:** <br>
-        Sessions are typically limited to **about 5 minutes** of activity. To continue working after the time limit, you will need to **close this tab and open the `start_session_v2.html` file again** to generate a new session and `liveUrl`.
+        <p class="disclaimer-title">⚠️ PLEASE READ BEFORE PROCEEDING</p>
+        <p>1. **SECURITY RISK (API Key):** This file contains your API Key. **DO NOT** share this file or upload it to a public server.</p>
+        <p>2. **Session Limit:** Sessions are typically limited to **about 5 minutes**. To continue working after the time limit, you must **close the current tab** and **open this HTML file again** to generate a new session.</p>
     </div>
     
-    <div class="spinner" id="loading-spinner"></div>
-    <p id="status-message">Requesting new session from API...</p>
+    <div id="countdown-message">
+        <p>Starting session request in <span id="countdown">5</span> seconds...</p>
+    </div>
+
+    <div class="spinner" id="loading-spinner" style="display:none;"></div>
+    <p id="status-message"></p>
     <p>
         <a id="live-link" href="#" style="display:none; color: #28a745; font-weight: bold;">
             Click here if not redirected automatically
@@ -65,10 +78,6 @@
 
     <script>
         // ----------------------------------------------------------------------------------
-        // !!! CRITICAL SECURITY WARNING: DO NOT USE THIS FILE PUBLICLY !!!
-        // Anyone can see this key. Use a secure backend server for production environments.
-        // ----------------------------------------------------------------------------------
-        
         // --- !!! 1. REPLACE THE API KEY BELOW !!! ---
         const API_KEY = "bu_w0Q-M4FuLiw0bM47S_y1pvuttA_yxHpgyRMPdbxdHjs"; 
         
@@ -77,15 +86,38 @@
         const SESSION_BODY = {
             "startUrl": "https://Google.com",
             "proxyCountryCode": "us"
-            // Add other V2 options here if needed.
         };
         // ----------------------------------------------------------------------------------
 
         const statusMessage = document.getElementById('status-message');
         const liveLink = document.getElementById('live-link');
         const spinner = document.getElementById('loading-spinner');
+        const countdownElement = document.getElementById('countdown');
+        const countdownMessageDiv = document.getElementById('countdown-message');
+
+        /**
+         * Counts down and then triggers the API call.
+         */
+        function startCountdown(seconds) {
+            let count = seconds;
+            countdownElement.textContent = count;
+            
+            const interval = setInterval(() => {
+                count--;
+                countdownElement.textContent = count;
+                
+                if (count <= 0) {
+                    clearInterval(interval);
+                    countdownMessageDiv.style.display = 'none';
+                    spinner.style.display = 'block';
+                    createSessionAndRedirect();
+                }
+            }, 1000);
+        }
 
         async function createSessionAndRedirect() {
+            statusMessage.textContent = "Sending request to start session...";
+            
             try {
                 // 1. Make the POST request
                 const response = await fetch(API_ENDPOINT, {
@@ -97,7 +129,6 @@
                     body: JSON.stringify(SESSION_BODY)
                 });
 
-                // Check for HTTP errors (e.g., 401 Unauthorized, 400 Bad Request)
                 if (!response.ok) {
                     const errorText = await response.text();
                     let errorMessage = errorText;
@@ -135,7 +166,8 @@
             }
         }
 
-        createSessionAndRedirect();
+        // Start the process with a 5-second delay for reading the disclaimer
+        startCountdown(5); 
     </script>
 </body>
 </html>
