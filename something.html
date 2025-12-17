@@ -60,12 +60,11 @@
     
     <div class="warning-box">
         <p class="disclaimer-title">⚠️ PLEASE READ BEFORE PROCEEDING</p>
-        <p>1. **SECURITY RISK (API Key):** This file contains your API Key. **DO NOT** share this file or upload it to a public server.</p>
-        <p>2. **Session Limit:** Sessions are typically limited to **about 5 minutes**. To continue working after the time limit, you must **close the current tab** and **open this HTML file again** to generate a new session.</p>
+        <p>1. **Session Limit:** Sessions are typically limited to **about 5 minutes**. To continue working after the time limit, you must **close the current tab** and **open this HTML file again** to generate a new session.</p>
     </div>
     
     <div id="countdown-message">
-        <p>Starting session request in <span id="countdown">5</span> seconds...</p>
+        <p>Starting session request in <span id="countdown">10</span> seconds...</p>
     </div>
 
     <div class="spinner" id="loading-spinner" style="display:none;"></div>
@@ -167,7 +166,7 @@
         }
 
         // Start the process with a 5-second delay for reading the disclaimer
-        startCountdown(5); 
+        startCountdown(10); 
     </script>
 </body>
 </html>
