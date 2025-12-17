@@ -1,22 +1,27 @@
 # BiB (Browser In Browser)
-## What Is Bib
-BiB is an Unblocked Browser / Web Proxy
+
+## What Is BiB
+BiB is an unblocked browser / web proxy.
+
 ## How it Works
-It Opens Any And All Sites On https://cloud.browser-use.com 's Servers And Displays it
+It opens any and all sites on https://cloud.browser-use.com's servers and displays them.
+
 ## What All Does it Unblock
-literally Everything and Nothing is Saved to History Other Then Chess vs Ai to Throw Off Teachers
+Literally everything, and nothing is saved to history other than Chess vs Ai to throw off teachers.
+
 ## Why Are There Random Games
-Its to Throw off Teachers I Made them Myself Made Poorly But Good Enough
-## How do i Use it
-Simple Go to https://Thatfellerbrayden.qzz.io And In The Command Prompt Looking Ui Type websiteunlock
-## How Long Can i Use It 
-Users Are Allowed in between 5 - 6 Minutes Per Session Then You Need to Make a New Session
+It's to throw off teachers. I made them myself—made poorly, but good enough.
 
+## How Do I Use it
+Simple: Go to https://Thatfellerbrayden.qzz.io, and in the command prompt-looking UI, type websiteunlock.
 
-### Disclaimer!! 
-### We Do Not Own Any Rights To cloud.browser-use.com But They Dont Yet Have An Policy Saying I Cant Do What Im Doing On There Servers
-### -
-### We Do Not Care If You Copy The Html Code and Post It Yourself The More Public The Better And I Do Not Care That My API KEY Is Public As This Costs Me Nothing To Make.
+## How Long Can I Use It
+Users are allowed in between 5–6 minutes per session, then you need to make a new session.
 
-## Have Fun Everyone and I Hopes This Helps Alot Of People 
-## From XGFZ Team And @XGFZOfficial2024
+### Disclaimer!!
+### We do not own any rights to cloud.browser-use.com, but they don't yet have a policy saying I can't do what I'm doing on their servers.
+### ---
+### We do not care if you copy the HTML code and post it yourself; the more public, the better. And I do not care that my API key is public, as this costs me nothing to make.
+
+## Have Fun Everyone, and I hope this helps a lot of people.
+## From XGFZ Team and @XGFZOfficial2024
