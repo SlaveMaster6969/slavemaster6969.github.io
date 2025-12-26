@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Command Console</title>
-<meta name="description" content="Welcome To That Feller Brayden's Website There Is A Secret In The Console Goodluck">
 <style>
     body {
         margin: 0;
@@ -42,7 +41,6 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
-        position: relative;
     }
 
     #chat-output {
@@ -72,6 +70,7 @@
     .chat-info { color: #88c0d0; } 
     .chat-error { color: #e74c3c; } 
     .chat-command { color: #a3be8c; }
+    .chat-secret { color: #ebcb8b; font-weight: bold; }
 
     #visitor-counter {
         margin-top: 10px;
@@ -81,7 +80,6 @@
         font-family: monospace;
         border-top: 1px solid #555;
         padding-top: 5px;
-        text-shadow: 0 0 5px #ffcc00;
     }
 </style>
 </head>
@@ -91,9 +89,9 @@
     <div id="chat-window">
         <div id="chat-output">
             <span class="chat-info">Welcome to the Command Console.</span><br>
-            <span class="chat-info">Type "help" to see available games.</span>
+            <span class="chat-info">Type "help" for a list of games.</span>
         </div>
-        <input type="text" id="chat-input" placeholder="Type command here and press Enter..." autofocus>
+        <input type="text" id="chat-input" placeholder="Type command here..." autofocus>
         <div id="visitor-counter">Loading visitor count...</div>
     </div>
 </div>
@@ -103,11 +101,13 @@
     const chatOutput = document.getElementById('chat-output');
     const visitorCounter = document.getElementById('visitor-counter');
 
+    // CONFIGURATION: Add new games or hidden links here.
+    // Use 'hidden: true' for things you only want on Page 69.
     const COMMANDS = {
-        'chess': '/chess.html',
-        'minesweeper': '/minesweeper.html',
-        'tictactoe': '/tictactoe.html',
-        'bib': '/something.html'
+        'chess': { url: '/chess.html', desc: 'Play Chess', hidden: false },
+        'minesweeper': { url: '/minesweeper.html', desc: 'Clear Mines', hidden: false },
+        'tictactoe': { url: '/tictactoe.html', desc: 'Classic X and O', hidden: false },
+        'bib': { url: '/something.html', desc: 'Browser in Browser', hidden: true }
     };
 
     function logToChat(message, type = 'info') {
@@ -120,57 +120,61 @@
     }
 
     function handleChatCommand() {
-        const fullInput = chatInput.value.trim().toLowerCase();
+        const input = chatInput.value.trim().toLowerCase();
         chatInput.value = '';
 
-        if (!fullInput) return;
+        if (!input) return;
+        logToChat(`> ${input}`, 'command');
 
-        logToChat(`> ${fullInput}`, 'command');
-
-        // Logic for "help" commands
-        if (fullInput === 'help') {
-            logToChat("--- Available Games ---");
-            logToChat("chess - Play a game of Chess");
-            logToChat("minesweeper - Clear the minefield");
-            logToChat("tictactoe - Classic 3-in-a-row");
-            logToChat("Type <b>help -p 2</b> For Page 2", "info");
+        // --- HELP LOGIC ---
+        if (input === 'help') {
+            logToChat("--- Games List ---");
+            // Shows only non-hidden games
+            Object.keys(COMMANDS).forEach(cmd => {
+                if (!COMMANDS[cmd].hidden) logToChat(`${cmd} - ${COMMANDS[cmd].desc}`);
+            });
+            logToChat("For More Commands Type Help -P 2", "info");
             return;
         }
 
-        if (fullInput === 'help -p 2') {
-            logToChat("--- Page 2: Advanced Commands ---");
-            logToChat("bib - Browser in Browser");
-            logToChat("[New Commands will appear here]");
+        if (input === 'help -p 2') {
+            logToChat("--- Full Games List (Page 2) ---");
+            // Shows all non-hidden games (same as page 1, but keeps BiB hidden)
+            Object.keys(COMMANDS).forEach(cmd => {
+                if (!COMMANDS[cmd].hidden) logToChat(`${cmd} - ${COMMANDS[cmd].desc}`);
+            });
+            logToChat("Stay tuned for future updates!");
             return;
         }
 
-        // Logic for redirection
-        if (COMMANDS[fullInput]) {
-            logToChat(`Redirecting to ${fullInput.toUpperCase()}...`, 'info');
-            window.location.href = COMMANDS[fullInput];
+        if (input === 'help -p 69') {
+            logToChat("--- UNLOCKED: ALL COMMANDS ---", "secret");
+            // Automatically shows EVERYTHING including hidden commands
+            Object.keys(COMMANDS).forEach(cmd => {
+                const prefix = COMMANDS[cmd].hidden ? "[HIDDEN] " : "";
+                logToChat(`${prefix}${cmd} - ${COMMANDS[cmd].desc}`);
+            });
+            return;
+        }
+
+        // --- EXECUTION LOGIC ---
+        if (COMMANDS[input]) {
+            logToChat(`Redirecting to ${input.toUpperCase()}...`, 'info');
+            window.location.href = COMMANDS[input].url;
         } else {
-            // Updated error message so it doesn't list the keys (keeping BiB hidden)
-            logToChat(`Unknown command: "${fullInput}". Type "help" for a list of commands.`, 'error');
+            logToChat(`Unknown command: "${input}". Type "help" for assistance.`, 'error');
         }
     }
 
-    chatInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            handleChatCommand();
-        }
-    });
+    chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleChatCommand(); });
 
-    chatInput.focus();
-
-    // Visitor Counter Fetch
+    // Visitor Counter
     fetch('https://visitcount.brayden-d3c.workers.dev/?increment=true')
       .then(res => res.json())
       .then(data => {
-        visitorCounter.textContent = `This page has been visited ${data.count} time${data.count === 1 ? '' : 's'}.`;
+        visitorCounter.textContent = `Visits: ${data.count}`;
       })
-      .catch(err => {
-        visitorCounter.textContent = "Visitor count unavailable.";
-      });
+      .catch(() => { visitorCounter.textContent = "Offline Mode"; });
 </script>
 </body>
 </html>
