@@ -73,7 +73,6 @@
     .chat-error { color: #e74c3c; } 
     .chat-command { color: #a3be8c; }
 
-    /* Visitor counter styling */
     #visitor-counter {
         margin-top: 10px;
         font-size: 0.85em;
@@ -92,13 +91,9 @@
     <div id="chat-window">
         <div id="chat-output">
             <span class="chat-info">Welcome to the Command Console.</span><br>
-            <span class="chat-info">Type a command and press Enter.</span><br>
-            <span class="chat-info">Available commands:</span>
-            <span class="chat-command">chess, minesweeper, tictactoe, websiteunlock</span>
+            <span class="chat-info">Type "help" to see available games.</span>
         </div>
         <input type="text" id="chat-input" placeholder="Type command here and press Enter..." autofocus>
-
-        <!-- Visitor Counter -->
         <div id="visitor-counter">Loading visitor count...</div>
     </div>
 </div>
@@ -112,7 +107,7 @@
         'chess': '/chess.html',
         'minesweeper': '/minesweeper.html',
         'tictactoe': '/tictactoe.html',
-        'websiteunlock': '/something.html'
+        'bib': '/something.html'
     };
 
     function logToChat(message, type = 'info') {
@@ -125,18 +120,37 @@
     }
 
     function handleChatCommand() {
-        const command = chatInput.value.trim().toLowerCase();
+        const fullInput = chatInput.value.trim().toLowerCase();
         chatInput.value = '';
 
-        if (!command) return;
+        if (!fullInput) return;
 
-        logToChat(`> ${command}`, 'command');
+        logToChat(`> ${fullInput}`, 'command');
 
-        if (COMMANDS[command]) {
-            logToChat(`Redirecting to ${command.toUpperCase()}...`, 'info');
-            window.location.href = COMMANDS[command];
+        // Logic for "help" commands
+        if (fullInput === 'help') {
+            logToChat("--- Available Games ---");
+            logToChat("chess - Play a game of Chess");
+            logToChat("minesweeper - Clear the minefield");
+            logToChat("tictactoe - Classic 3-in-a-row");
+            logToChat("Type <b>help -p 2</b> For Page 2", "info");
+            return;
+        }
+
+        if (fullInput === 'help -p 2') {
+            logToChat("--- Page 2: Advanced Commands ---");
+            logToChat("bib - Browser in Browser");
+            logToChat("[New Commands will appear here]");
+            return;
+        }
+
+        // Logic for redirection
+        if (COMMANDS[fullInput]) {
+            logToChat(`Redirecting to ${fullInput.toUpperCase()}...`, 'info');
+            window.location.href = COMMANDS[fullInput];
         } else {
-            logToChat(`Unknown command: "${command}". Try one of: ${Object.keys(COMMANDS).join(', ')}`, 'error');
+            // Updated error message so it doesn't list the keys (keeping BiB hidden)
+            logToChat(`Unknown command: "${fullInput}". Type "help" for a list of commands.`, 'error');
         }
     }
 
@@ -148,9 +162,7 @@
 
     chatInput.focus();
 
-    // ---------------------------
     // Visitor Counter Fetch
-    // ---------------------------
     fetch('https://visitcount.brayden-d3c.workers.dev/?increment=true')
       .then(res => res.json())
       .then(data => {
@@ -158,7 +170,6 @@
       })
       .catch(err => {
         visitorCounter.textContent = "Visitor count unavailable.";
-        console.error('Visitor counter error:', err);
       });
 </script>
 </body>
