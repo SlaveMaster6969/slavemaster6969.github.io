@@ -1,248 +1,173 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minesweeper | Elite Trace Protocol</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Start Cloud Browser Session V2</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&display=swap');
-        
-        :root { --primary: #38bdf8; --danger: #f43f5e; --bg-dark: #0b0f1a; }
-
-        body {
-            background-color: var(--bg-dark);
-            font-family: 'Inter', sans-serif;
-            color: #e2e8f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden;
-            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0b0f1a 100%);
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 50px; 
+            background-color: #f4f7f6;
         }
-
-        /* Full Visual Panels */
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 28px;
-            padding: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            position: relative;
-            z-index: 10;
+        h1 {
+            color: #333;
         }
-
-        .stats-container { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 30px; }
-
-        .stats-card {
-            background: #1e293b;
-            padding: 16px 28px;
-            border-radius: 18px;
-            font-family: 'JetBrains Mono', monospace;
-            border: 1px solid #334155;
-            min-width: 140px;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        .warning-box {
+            background-color: #fff3cd; 
+            color: #856404;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 500px;
+            border-radius: 5px;
+            font-size: 0.95em;
         }
-
-        .label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.15em; display: block; margin-bottom: 6px; }
-        .value { font-size: 2.2rem; color: var(--primary); font-weight: 700; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
-
-        #game-board {
-            display: grid; gap: 6px; padding: 12px;
-            background: rgba(0,0,0,0.3); border-radius: 16px; user-select: none;
-            border: 1px solid rgba(255,255,255,0.05);
+        .disclaimer-title {
+            font-weight: bold;
+            text-decoration: underline;
         }
-
-        .cell {
-            width: 40px; height: 40px; background: #334155; border-radius: 10px;
-            display: flex; justify-content: center; align-items: center;
-            font-weight: 800; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            font-size: 1.25rem; border: 1px solid rgba(255,255,255,0.05);
-            position: relative;
+        .spinner { 
+            border: 4px solid #e0e0e0; 
+            border-top: 4px solid #007bff; /* Blue spinner */
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+            margin: 20px auto; 
         }
-
-        .cell:hover:not(.revealed) { background: #475569; transform: scale(1.1) translateY(-2px); border-color: var(--primary); z-index: 5; }
-        .cell.revealed { background: #0f172a; border: 1px solid #1e293b; cursor: default; }
-
-        .n-1 { color: #38bdf8; } .n-2 { color: #4ade80; } .n-3 { color: #f43f5e; }
-        .n-4 { color: #818cf8; } .n-5 { color: #f59e0b; } .n-6 { color: #2dd4bf; }
-        .mine { background: var(--danger) !important; box-shadow: 0 0 25px var(--danger); color: white; animation: pulse 0.5s infinite alternate; }
-
-        @keyframes pulse { from { transform: scale(1); } to { transform: scale(0.9); } }
-
-        /* Full Screen Overlays */
-        #status-overlay {
-            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.95);
-            display: none; flex-direction: column; justify-content: center;
-            align-items: center; z-index: 100; border-radius: 28px;
-            animation: fadeIn 0.4s ease-out;
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
         }
-
-        /* Console */
-        #console-overlay {
-            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9);
-            display: none; justify-content: center; align-items: flex-start; 
-            padding-top: 15vh; z-index: 1000; backdrop-filter: blur(10px);
+        .error { 
+            color: #dc3545; 
+            font-weight: bold; 
+            border: 1px solid #dc3545;
+            padding: 10px;
+            margin: 20px auto;
+            max-width: 400px;
+            background-color: #f8d7da;
         }
-
-        #console-box { width: 700px; background: #000; border: 1px solid var(--primary); border-radius: 16px; padding: 30px; }
-
-        /* SID Ghost Tag */
-        #sid-tag {
-            position: fixed; bottom: 20px; right: 25px;
-            font-family: 'JetBrains Mono', monospace; font-size: 11px;
-            color: rgba(71, 85, 105, 0.6); max-width: 600px; word-break: break-all; 
-            cursor: pointer; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px;
+        #countdown {
+            font-weight: bold;
+            color: #007bff;
         }
     </style>
 </head>
 <body>
-
-<div class="glass-panel">
-    <div id="status-overlay">
-        <h2 id="status-title" class="text-6xl font-black mb-8 italic tracking-tighter"></h2>
-        <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 text-white px-12 py-5 rounded-2xl font-bold transition-all shadow-xl shadow-sky-500/20">RE-INITIALIZE</button>
-    </div>
-
-    <div class="stats-container">
-        <div class="stats-card"><span class="label">Detection</span><span id="mine-count" class="value">000</span></div>
-        <button onclick="startGame(currentDifficulty)" class="bg-slate-800 hover:bg-slate-700 p-5 rounded-2xl border border-slate-700 transition-all">
-            <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        </button>
-        <div class="stats-card text-right"><span class="label">Uptime</span><span id="timer" class="value">000</span></div>
-    </div>
-
-    <div id="game-board" oncontextmenu="return false;"></div>
-
-    <div class="mt-10 flex justify-between items-center">
-        <select onchange="changeDifficulty(this.value)" class="bg-slate-800 text-slate-300 text-sm font-bold rounded-xl px-5 py-3 border border-slate-700 cursor-pointer">
-            <option value="beginner">CLASS: BEGINNER</option>
-            <option value="intermediate">CLASS: INTERMEDIATE</option>
-            <option value="expert">CLASS: EXPERT</option>
-        </select>
-        <div class="text-xs font-mono text-slate-600 tracking-widest">ENCRYPTION: AES-256 ACTIVE</div>
-    </div>
-</div>
-
-<div id="sid-tag" onclick="copySID()">INIT_SESSION...</div>
-
-<div id="console-overlay">
-    <div id="console-box">
-        <div id="console-out" class="h-64 overflow-y-auto font-mono text-sky-500 mb-4 border-b border-slate-800">> KERNEL_LOADED...</div>
-        <div class="flex items-center"><span class="text-sky-500 mr-2">></span><input type="text" id="console-in" class="bg-transparent text-sky-500 outline-none w-full font-mono" autofocus></div>
-    </div>
-</div>
-
-<script>
-    let board, rows, cols, mines, cellsToReveal, gameRunning = false, time = 0, timerInterval;
-    let currentDifficulty = 'beginner', worldSeed = "", moveHistory = "";
-    const DEFS = { beginner: [9, 9, 10], intermediate: [16, 16, 40], expert: [16, 30, 99] };
-
-    function seededRandom(s) { let x = Math.sin(s) * 10000; return x - Math.floor(x); }
-
-    function startGame(level) {
-        clearInterval(timerInterval);
-        gameRunning = false; time = 0; currentDifficulty = level;
-        [rows, cols, mines] = DEFS[level]; cellsToReveal = rows * cols - mines;
-        worldSeed = Math.floor(Math.random() * 0xFFFFFFFF).toString(16).toUpperCase().padStart(8, '0');
-        moveHistory = "";
-        document.getElementById('status-overlay').style.display = 'none';
-        document.getElementById('timer').textContent = "000";
-        document.getElementById('sid-tag').textContent = worldSeed;
-        board = Array(rows).fill().map(() => Array(cols).fill().map(() => ({ isMine: false, isRevealed: false, state: 0, count: 0 })));
-        
-        const gb = document.getElementById('game-board');
-        gb.innerHTML = ''; gb.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
-        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell'; cell.id = `c-${r}-${c}`;
-            cell.onmousedown = (e) => { if (e.button === 0) handleLeft(r, c); if (e.button === 2) handleRight(r, c); };
-            gb.appendChild(cell);
-        }
-        document.getElementById('mine-count').textContent = mines.toString().padStart(3, '0');
-    }
-
-    function handleLeft(r, c) {
-        if (board[r][c].isRevealed || board[r][c].state === 1) return;
-        if (!gameRunning && time === 0) {
-            placeMines(r, c); gameRunning = true;
-            timerInterval = setInterval(() => { time++; document.getElementById('timer').textContent = time.toString().padStart(3, '0'); }, 1000);
-        }
-        // Move history tracking: Hex Coords
-        moveHistory += r.toString(16).toUpperCase() + c.toString(16).toUpperCase();
-        document.getElementById('sid-tag').textContent = worldSeed + moveHistory;
-        
-        if (board[r][c].isMine) return end(false);
-        reveal(r, c);
-        if (cellsToReveal === 0) end(true);
-    }
-
-    function placeMines(rS, cS) {
-        let p = 0; let ts = parseInt(worldSeed, 16);
-        while (p < mines) {
-            const r = Math.floor(seededRandom(ts++) * rows);
-            const c = Math.floor(seededRandom(ts++) * cols);
-            if (!board[r][c].isMine && !(Math.abs(r-rS) <= 1 && Math.abs(c-cS) <= 1)) { board[r][c].isMine = true; p++; }
-        }
-        for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
-            if(board[r][c].isMine) continue;
-            let n = 0;
-            for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++) {
-                let nr=r+dr, nc=c+dc; if(nr>=0 && nr<rows && nc>=0 && nc<cols && board[nr][nc].isMine) n++;
-            }
-            board[r][c].count = n;
-        }
-    }
-
-    function reveal(r, c) {
-        let q = [[r, c]];
-        while(q.length > 0) {
-            let [cr, cc] = q.shift();
-            if (cr < 0 || cr >= rows || cc < 0 || cc >= cols || board[cr][cc].isRevealed || board[cr][cc].state === 1) continue;
-            board[cr][cc].isRevealed = true; cellsToReveal--;
-            const el = document.getElementById(`c-${cr}-${cc}`);
-            el.classList.add('revealed');
-            if (board[cr][cc].count > 0) {
-                el.textContent = board[cr][cc].count; el.classList.add(`n-${board[cr][cc].count}`);
-            } else {
-                for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++) q.push([cr+dr, cc+dc]);
-            }
-        }
-    }
-
-    function handleRight(r, c) {
-        if (board[r][c].isRevealed) return;
-        const el = document.getElementById(`c-${r}-${c}`);
-        board[r][c].state = (board[r][c].state + 1) % 3;
-        el.innerHTML = board[r][c].state === 1 ? '🚩' : (board[r][c].state === 2 ? '?' : '');
-    }
-
-    function end(won) {
-        gameRunning = false; clearInterval(timerInterval);
-        const over = document.getElementById('status-overlay'); over.style.display = 'flex';
-        document.getElementById('status-title').textContent = won ? "VICTORY" : "DEFEAT";
-        document.getElementById('status-title').className = won ? "text-6xl font-black mb-8 italic text-emerald-400" : "text-6xl font-black mb-8 italic text-rose-500";
-    }
-
-    function copySID() { 
-        navigator.clipboard.writeText(document.getElementById('sid-tag').textContent);
-        const t = document.getElementById('sid-tag'); t.style.color = "#38bdf8"; setTimeout(()=>t.style.color="", 500);
-    }
-    function changeDifficulty(v) { startGame(v); }
+    <h1>Cloud Browser Session Initializer</h1>
     
-    // Console commands restored
-    window.addEventListener('keydown', e => {
-        if (e.key === '\\') { e.preventDefault(); document.getElementById('console-overlay').style.display = 'flex'; document.getElementById('console-in').focus(); }
-        if (e.key === 'Escape') document.getElementById('console-overlay').style.display = 'none';
-    });
-    document.getElementById('console-in').addEventListener('keydown', e => {
-        if (e.key === 'Enter') { if (e.target.value === "BiB") window.location.href = "something.html"; e.target.value = ''; }
-    });
+    <div class="warning-box">
+        <p class="disclaimer-title">⚠️ PLEASE READ BEFORE PROCEEDING</p>
+        <p>1. **SECURITY RISK (API Key):** This file contains your API Key. **DO NOT** share this file or upload it to a public server.</p>
+        <p>2. **Session Limit:** Sessions are typically limited to **about 5 minutes**. To continue working after the time limit, you must **close the current tab** and **open this HTML file again** to generate a new session.</p>
+    </div>
+    
+    <div id="countdown-message">
+        <p>Starting session request in <span id="countdown">5</span> seconds...</p>
+    </div>
 
-    startGame('beginner');
-</script>
+    <div class="spinner" id="loading-spinner" style="display:none;"></div>
+    <p id="status-message"></p>
+    <p>
+        <a id="live-link" href="#" style="display:none; color: #28a745; font-weight: bold;">
+            Click here if not redirected automatically
+        </a>
+    </p>
+
+    <script>
+        // ----------------------------------------------------------------------------------
+        // --- !!! 1. REPLACE THE API KEY BELOW !!! ---
+        const API_KEY = "bu_w0Q-M4FuLiw0bM47S_y1pvuttA_yxHpgyRMPdbxdHjs"; 
+        
+        // --- 2. API Endpoint and Request Configuration ---
+        const API_ENDPOINT = "https://api.browser-use.com/api/v2/sessions";
+        const SESSION_BODY = {
+            "startUrl": "https://Google.com",
+            "proxyCountryCode": "us"
+        };
+        // ----------------------------------------------------------------------------------
+
+        const statusMessage = document.getElementById('status-message');
+        const liveLink = document.getElementById('live-link');
+        const spinner = document.getElementById('loading-spinner');
+        const countdownElement = document.getElementById('countdown');
+        const countdownMessageDiv = document.getElementById('countdown-message');
+
+        /**
+         * Counts down and then triggers the API call.
+         */
+        function startCountdown(seconds) {
+            let count = seconds;
+            countdownElement.textContent = count;
+            
+            const interval = setInterval(() => {
+                count--;
+                countdownElement.textContent = count;
+                
+                if (count <= 0) {
+                    clearInterval(interval);
+                    countdownMessageDiv.style.display = 'none';
+                    spinner.style.display = 'block';
+                    createSessionAndRedirect();
+                }
+            }, 1000);
+        }
+
+        async function createSessionAndRedirect() {
+            statusMessage.textContent = "Sending request to start session...";
+            
+            try {
+                // 1. Make the POST request
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'X-Browser-Use-API-Key': API_KEY, 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(SESSION_BODY)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage = errorText;
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.message || errorText;
+                    } catch {} 
+
+                    throw new Error(`[${response.status} ${response.statusText}] ${errorMessage}`);
+                }
+
+                // 2. Parse the successful JSON response
+                const data = await response.json();
+                const liveUrl = data.liveUrl; 
+
+                // 3. Handle the live URL
+                if (liveUrl) {
+                    statusMessage.textContent = "Success! Redirecting to Live Session View...";
+                    spinner.style.display = 'none';
+                    liveLink.href = liveUrl;
+                    liveLink.style.display = 'inline';
+
+                    // Final step: Redirect the browser
+                    window.location.href = liveUrl;
+                } else {
+                    throw new Error("API responded successfully but the required 'liveUrl' was missing from the response.");
+                }
+
+            } catch (error) {
+                // Display error message
+                spinner.style.display = 'none';
+                statusMessage.className = 'error';
+                statusMessage.innerHTML = `<strong>Session Creation Error:</strong><br>${error.message}<br><br>Check the browser console (F12) for detailed network errors.`;
+                console.error("Browser Use API Error:", error);
+            }
+        }
+
+        // Start the process with a 5-second delay for reading the disclaimer
+        startCountdown(5); 
+    </script>
 </body>
 </html>
