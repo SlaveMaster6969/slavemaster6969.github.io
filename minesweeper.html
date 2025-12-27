@@ -75,7 +75,7 @@
 <div class="glass-panel">
     <div id="status-overlay">
         <h2 id="status-title" class="text-5xl font-black mb-2 italic tracking-tighter"></h2>
-        <p id="status-instruction" class="text-sky-500 font-mono text-xs mb-8 tracking-widest opacity-0"></p>
+        <p id="status-instruction" class="text-sky-500 font-mono text-[10px] mb-8 tracking-widest opacity-0 text-center uppercase"></p>
         <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 text-white px-10 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-sky-500/20">RESTART</button>
     </div>
     <div class="flex justify-between items-center mb-10 gap-6">
@@ -118,12 +118,9 @@
     let currentDifficulty = 'beginner';
     let hasWon = false;
 
-    // ==========================================
-    // COMMAND REGISTRY
-    // (command)(Description)(URL)(Hidden True/False)
-    // ==========================================
+    // Command Registry for general navigation (No bib here)
     const COMMAND_REGISTRY = [
-        //['bib', 'SECURE ACCESS ONLY', '/something.html', true]
+        ['exit', 'Return to Terminal', 'index.html', false]
     ];
 
     const sessionID = "EP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -152,32 +149,22 @@
             
             if (awaitingAuth) {
                 if (val === sessionID) {
-                    logTerm("AUTH_SUCCESS: EXECUTING WIN_PROTOCOL...", "sys");
-                    const bibData = COMMAND_REGISTRY.find(c => c[0] === 'bib');
-                    setTimeout(() => { 
-                        termOverlay.style.display = 'none';
-                        window.location.href = bibData[2]; 
-                    }, 600);
+                    logTerm("WIN_PROTOCOL_AUTHORIZED. SAVING SESSION_DATA...", "sys");
+                    localStorage.setItem('minesweeper_winner_id', sessionID);
+                    logTerm("DATA_SAVED. RETURN TO HOMEPAGE COMMAND PROMPT.", "sys");
                 } else {
                     logTerm("AUTH_FAILURE: SESSION ID MISMATCH.", "error");
                 }
                 awaitingAuth = false;
             } else if (val === "minesweeper -w=true") {
-                logTerm("SECURITY CHECK: ENTER SESSION ID TO CONFIRM ACTION.", "sys");
+                logTerm("HACK_PROTOCOL: ENTER SESSION ID TO SAVE WIN_STATUS.", "sys");
                 awaitingAuth = true;
+            } else if (cmdInput === "bib") {
+                logTerm("ERROR: NODE NOT FOUND. USE THE COMMAND PROMPT ON THE HOMEPAGE.", "error");
             } else {
                 const entry = COMMAND_REGISTRY.find(c => c[0] === cmdInput);
                 if (entry) {
-                    if (entry[0] === 'bib') {
-                        if (hasWon) {
-                            logTerm("SECURITY PROTOCOL ACTIVE. ENTER SESSION ID:", "sys");
-                            awaitingAuth = true;
-                        } else {
-                            logTerm("ERROR: VICTORY STATUS NOT DETECTED. COMMAND LOCKED.", "error");
-                        }
-                    } else {
-                        window.location.href = entry[2];
-                    }
+                    window.location.href = entry[2];
                 } else {
                     logTerm("UNKNOWN_COMMAND. ACCESS DENIED.", "error");
                 }
@@ -275,7 +262,8 @@
         if (won) {
             localStorage.setItem('minesweeper_winner_id', sessionID); 
             title.textContent = "VICTORY"; title.className = "text-5xl font-black mb-2 italic text-emerald-400";
-            instruction.textContent = "ENTER BiB IN TERMINAL"; instruction.classList.remove('opacity-0');
+            instruction.textContent = "ENTER bib IN THE HOMEPAGE COMMAND PROMPT"; 
+            instruction.classList.remove('opacity-0');
         } else {
             title.textContent = "DEFEAT"; title.className = "text-5xl font-black mb-8 italic text-rose-500";
             instruction.classList.add('opacity-0');
