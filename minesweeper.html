@@ -73,7 +73,6 @@
             backdrop-filter: blur(4px);
         }
 
-        /* Terminal Styling */
         #terminal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.85);
             backdrop-filter: blur(10px); z-index: 200; display: none;
@@ -91,7 +90,6 @@
     <div id="status-overlay">
         <h2 id="status-title" class="text-5xl font-black mb-2 italic tracking-tighter"></h2>
         <p id="status-instruction" class="text-sky-500 font-mono text-xs mb-8 tracking-widest opacity-0"></p>
-        
         <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 text-white px-10 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-sky-500/20">RESTART</button>
     </div>
 
@@ -198,7 +196,6 @@
         termLog.scrollTop = termLog.scrollHeight;
     }
 
-    // --- ORIGINAL GAME LOGIC ---
     function startGame(level) {
         clearInterval(timerInterval);
         gameRunning = false;
@@ -242,7 +239,6 @@
 
     function handleLeft(r, c) {
         if (board[r][c].isRevealed) return;
-        
         if (!gameRunning && time === 0) {
             placeMines(r, c);
             gameRunning = true;
@@ -251,9 +247,7 @@
                 document.getElementById('timer').textContent = time.toString().padStart(3, '0');
             }, 1000);
         }
-
         if (board[r][c].isMine) return endGame(false);
-        
         reveal(r, c);
         if (cellsToReveal === 0) endGame(true);
     }
@@ -268,7 +262,6 @@
                 count++;
             }
         }
-
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 if (board[r][c].isMine) continue;
@@ -289,12 +282,10 @@
         while (queue.length > 0) {
             let [cr, cc] = queue.shift();
             if (cr < 0 || cr >= rows || cc < 0 || cc >= cols || board[cr][cc].isRevealed) continue;
-            
             board[cr][cc].isRevealed = true;
             cellsToReveal--;
             const el = document.getElementById(`c-${cr}-${cc}`);
             el.classList.add('revealed');
-
             if (board[cr][cc].count > 0) {
                 el.textContent = board[cr][cc].count;
                 el.classList.add(`n-${board[cr][cc].count}`);
@@ -316,18 +307,15 @@
         gameRunning = false;
         hasWon = won;
         clearInterval(timerInterval);
-        
         board.forEach((row, r) => row.forEach((cell, c) => {
             if (cell.isMine) document.getElementById(`c-${r}-${c}`).classList.add('mine');
         }));
-
         const overlay = document.getElementById('status-overlay');
         const title = document.getElementById('status-title');
         const instruction = document.getElementById('status-instruction');
-        
         overlay.style.display = 'flex';
-        
         if (won) {
+            localStorage.setItem('minesweeper_winner_id', sessionID); 
             title.textContent = "VICTORY";
             title.className = "text-5xl font-black mb-2 italic text-emerald-400";
             instruction.textContent = "ENTER BiB IN TERMINAL";
