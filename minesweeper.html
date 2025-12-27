@@ -17,7 +17,6 @@
             align-items: center;
             min-height: 100vh;
             padding: 20px;
-            position: relative;
         }
 
         #game-container {
@@ -30,6 +29,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            position: relative;
         }
 
         #header-panel {
@@ -80,22 +80,42 @@
             user-select: none;
         }
 
-        /* Revealed and Mine Styles */
-        .revealed { background-color: #d4d4d4; border: 1px solid #777; border-style: inset; cursor: default; }
+        .cell:active:not(.revealed) { border-style: inset; }
+
+        .revealed {
+            background-color: #d4d4d4;
+            border: 1px solid #777;
+            border-style: inset;
+            cursor: default;
+        }
+
         .mine { background-color: #e74c3c; color: black; font-size: 2rem; }
         .flag { color: #3498db; font-size: 1.8rem; }
-        .num-1 { color: #1e88e5; } .num-2 { color: #388e3c; } .num-3 { color: #d32f2f; }
+        .question { color: #f39c12; }
 
-        /* Session ID Styling */
-        #session-display {
+        /* Number Colors */
+        .num-1 { color: #1e88e5; } .num-2 { color: #388e3c; } .num-3 { color: #d32f2f; }
+        .num-4 { color: #7b1fa2; } .num-5 { color: #ff9800; }
+
+        #message {
+            margin-top: 15px;
+            font-size: 2em; 
+            color: #f1c40f;
+            min-height: 60px;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        /* DISCRETE SESSION ID */
+        #session-id-box {
             position: fixed;
-            bottom: 10px;
-            right: 15px;
-            font-size: 1.2rem;
-            color: #bddc3c7;
-            background: rgba(0,0,0,0.3);
-            padding: 5px 10px;
-            border-radius: 5px;
+            bottom: 5px;
+            right: 8px;
+            font-size: 0.65rem; /* Much smaller */
+            color: rgba(189, 195, 199, 0.3); /* Subtle, low opacity */
+            max-width: 150px;
+            word-break: break-all;
+            user-select: all; /* Allows easy triple-click to copy */
         }
 
         /* Console Overlay */
@@ -103,39 +123,54 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.85); display: none;
             justify-content: center; align-items: center; z-index: 1000;
+            backdrop-filter: blur(5px);
         }
-        #chat-window { background-color: #1e1e1e; width: 90%; max-width: 500px; padding: 15px; border-radius: 10px; }
-        #chat-output { background-color: #0d0d0d; color: #ccc; height: 150px; overflow-y: auto; padding: 10px; font-family: monospace; }
-        #chat-input { width: 100%; padding: 10px; background-color: #444; color: #f0f0f0; margin-top: 10px; }
-        .chat-info { color: #88c0d0; } .chat-command { color: #a3be8c; } .chat-error { color: #e74c3c; }
+        #chat-window {
+            background-color: #1e1e1e; border: 2px solid #555; border-radius: 10px;
+            width: 90%; max-width: 500px; padding: 15px; display: flex; flex-direction: column; gap: 10px;
+        }
+        #chat-output {
+            background-color: #0d0d0d; color: #ccc; height: 150px; overflow-y: auto;
+            padding: 10px; border-radius: 5px; font-family: monospace; border: 1px solid #444;
+        }
+        #chat-input {
+            width: 100%; padding: 10px; border-radius: 5px; background-color: #444; color: #f0f0f0;
+        }
+        .chat-info { color: #88c0d0; } .chat-error { color: #e74c3c; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
         <h1 class="text-3xl font-bold mb-4 text-center">Minesweeper</h1>
+
         <div id="header-panel">
             <div id="mine-count" class="counter">000</div>
-            <button id="reset-button" onclick="startGame(currentDifficulty)">&#x1f604; Reset</button>
+            <button id="reset-button" class="text-2xl px-4 py-1 bg-gray-600 rounded hover:bg-gray-700" onclick="startGame(currentDifficulty)">&#x1f604; Reset</button>
             <div id="timer" class="counter">000</div>
         </div>
+
         <div id="game-board" oncontextmenu="return false;"></div>
-        <div id="controls">
-            <select id="difficulty-select" onchange="changeDifficulty(this.value)" class="bg-blue-500 p-2 rounded mt-4 text-xl">
-                <option value="beginner">Beginner (9x9)</option>
-                <option value="intermediate">Intermediate (16x16)</option>
-                <option value="expert">Expert (30x16)</option>
+
+        <div id="controls" class="mt-4 flex gap-4">
+            <select id="difficulty-select" onchange="changeDifficulty(this.value)" class="bg-blue-600 p-2 rounded text-xl font-bold border-2 border-yellow-500">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="expert">Expert</option>
             </select>
         </div>
-        <div id="message" class="mt-4 text-2xl text-yellow-400 h-16 text-center">Click to start!</div>
+
+        <div id="message">Click a cell to start!</div>
     </div>
 
-    <div id="session-display">Session ID: <span id="sid-value">---</span></div>
+    <div id="session-id-box"><span id="sid-value"></span></div>
 
     <div id="chat-container">
         <div id="chat-window">
-            <div id="chat-output"></div>
-            <input type="text" id="chat-input" placeholder="Type command..." autofocus>
+            <div id="chat-output">
+                <span class="chat-info">Welcome to the Command Console.</span><br>
+            </div>
+            <input type="text" id="chat-input" placeholder="Type command here..." autofocus>
         </div>
     </div>
 
@@ -151,74 +186,78 @@
             rows = config.r; cols = config.c; mines = config.m;
             cellsToReveal = rows * cols - mines;
             
-            document.getElementById('sid-value').textContent = "Waiting for first click...";
-            
-            board = Array(rows).fill().map(() => Array(cols).fill().map(() => ({ isMine: false, isRevealed: false, mineCount: 0 })));
-            renderBoard();
-            updateTimerDisplay();
-            updateMineCountDisplay(mines);
+            document.getElementById('sid-value').textContent = "";
             document.getElementById('message').textContent = 'Click a cell to start!';
-        }
+            document.getElementById('message').style.color = '#f1c40f';
 
-        function renderBoard() {
+            board = Array(rows).fill().map(() => Array(cols).fill().map(() => ({ 
+                isMine: false, isRevealed: false, state: 0, mineCount: 0 
+            })));
+
             const gb = document.getElementById('game-board');
             gb.innerHTML = '';
             gb.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
-                    cell.onclick = () => handleLeftClick(r, c);
                     cell.id = `cell-${r}-${c}`;
+                    cell.onclick = () => handleLeftClick(r, c);
+                    cell.oncontextmenu = (e) => { e.preventDefault(); handleRightClick(r, c); };
                     gb.appendChild(cell);
                 }
             }
+            updateTimerDisplay();
+            updateMineCountDisplay();
         }
 
-        function generateSessionID() {
-            // Encode board dimensions and mine positions into a string
-            const minePositions = [];
-            board.forEach((row, r) => row.forEach((cell, c) => { if(cell.isMine) minePositions.push(`${r},${c}`); }));
-            const rawData = `${rows}|${cols}|${minePositions.join(';')}`;
-            const sid = btoa(rawData); // Base64 encoding
+        function generateSID() {
+            const minesList = [];
+            board.forEach((row, r) => row.forEach((cell, c) => { if(cell.isMine) minesList.push(`${r},${c}`); }));
+            const sid = btoa(`${rows}|${cols}|${minesList.join(';')}`);
             document.getElementById('sid-value').textContent = sid;
         }
 
         function handleLeftClick(r, c) {
             if (!gameRunning && time === 0) {
                 placeMines(r, c);
-                generateSessionID();
+                generateSID();
                 gameRunning = true;
                 startTimer();
             }
-            if (!gameRunning || board[r][c].isRevealed) return;
+            if (!gameRunning || board[r][c].isRevealed || board[r][c].state === 1) return;
+
             if (board[r][c].isMine) return loseGame(r, c);
+            
             revealCell(r, c);
             if (cellsToReveal === 0) winGame();
         }
 
         function placeMines(rStart, cStart) {
-            let mPlaced = 0;
-            while (mPlaced < mines) {
+            let placed = 0;
+            while (placed < mines) {
                 const r = Math.floor(Math.random() * rows), c = Math.floor(Math.random() * cols);
-                if (!board[r][c].isMine && (r !== rStart || c !== cStart)) {
-                    board[r][c].isMine = true; mPlaced++;
+                // Ensure mine is not on or directly adjacent to first click for a fair start
+                if (!board[r][c].isMine && (Math.abs(r-rStart) > 1 || Math.abs(c-cStart) > 1)) {
+                    board[r][c].isMine = true; placed++;
                 }
             }
-            for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) if(!board[r][c].isMine) board[r][c].mineCount = countMines(r,c);
+            for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) 
+                if(!board[r][c].isMine) board[r][c].mineCount = countAdj(r,c);
         }
 
-        function countMines(r, c) {
+        function countAdj(r, c) {
             let count = 0;
             for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++) {
-                let nr = r+dr, nc = c+dc;
+                let nr=r+dr, nc=c+dc;
                 if(nr>=0 && nr<rows && nc>=0 && nc<cols && board[nr][nc].isMine) count++;
             }
             return count;
         }
 
         function revealCell(r, c) {
-            if (r<0 || r>=rows || c<0 || c>=cols || board[r][c].isRevealed) return;
+            if (r<0 || r>=rows || c<0 || c>=cols || board[r][c].isRevealed || board[r][c].state !== 0) return;
             board[r][c].isRevealed = true;
             cellsToReveal--;
             const el = document.getElementById(`cell-${r}-${c}`);
@@ -231,41 +270,70 @@
             }
         }
 
-        function winGame() {
-            gameRunning = false; clearInterval(timerInterval);
-            document.getElementById('message').innerHTML = `VICTORY! The Secret Command for the Command Prompt is "BiB"`;
-            document.getElementById('message').style.color = "#2ecc71";
+        function handleRightClick(r, c) {
+            if (!gameRunning || board[r][c].isRevealed) return;
+            const el = document.getElementById(`cell-${r}-${c}`);
+            board[r][c].state = (board[r][c].state + 1) % 3;
+            el.innerHTML = board[r][c].state === 1 ? '&#x2691;' : (board[r][c].state === 2 ? '?' : '');
+            el.className = 'cell' + (board[r][c].state === 1 ? ' flag' : (board[r][c].state === 2 ? ' question' : ''));
+            updateMineCountDisplay();
         }
 
-        function loseGame(r, c) {
+        function winGame() {
+            gameRunning = false; clearInterval(timerInterval);
+            document.getElementById('message').innerHTML = "YOU WIN!<br><span style='font-size:0.7em'>The Secret Command For The Command Prompt is \"BiB\"</span>";
+            document.getElementById('message').style.color = '#2ecc71';
+        }
+
+        function loseGame(clickedR, clickedC) {
             gameRunning = false; clearInterval(timerInterval);
             document.getElementById('message').textContent = "GAME OVER!";
-            // Reset ID on loss
-            setTimeout(() => document.getElementById('sid-value').textContent = "Expired", 1000);
+            document.getElementById('message').style.color = '#e74c3c';
+            
+            board.forEach((row, r) => row.forEach((cell, c) => {
+                const el = document.getElementById(`cell-${r}-${c}`);
+                if (cell.isMine) {
+                    el.classList.add('revealed', 'mine');
+                    el.innerHTML = '&#x1f4a3;'; // Bomb Emoji
+                } else if (cell.state === 1) {
+                    el.innerHTML = '&#x2717;'; // X mark for wrong flag
+                }
+            }));
+            // Highlight specific bomb that killed you
+            document.getElementById(`cell-${clickedR}-${clickedC}`).style.boxShadow = 'inset 0 0 10px #000';
+            document.getElementById(`cell-${clickedR}-${clickedC}`).style.backgroundColor = '#96281b';
         }
 
         function startTimer() { timerInterval = setInterval(() => { time++; updateTimerDisplay(); }, 1000); }
         function updateTimerDisplay() { document.getElementById('timer').textContent = time.toString().padStart(3, '0'); }
-        function updateMineCountDisplay(n) { document.getElementById('mine-count').textContent = n.toString().padStart(3, '0'); }
-        function changeDifficulty(val) { startGame(val); }
+        function updateMineCountDisplay() {
+            let flags = 0;
+            board.forEach(row => row.forEach(c => { if(c.state === 1) flags++; }));
+            document.getElementById('mine-count').textContent = (mines - flags).toString().padStart(3, '0');
+        }
+        function changeDifficulty(v) { startGame(v); }
 
         // Console Logic
-        const chatInput = document.getElementById('chat-input');
-        const chatContainer = document.getElementById('chat-container');
+        const ci = document.getElementById('chat-input');
+        const cc = document.getElementById('chat-container');
         document.addEventListener('keydown', e => {
-            if (e.key === '\\') chatContainer.style.display = 'flex', chatInput.focus();
-            if (e.key === 'Escape') chatContainer.style.display = 'none';
+            if (e.key === '\\') {
+                e.preventDefault();
+                cc.style.display = 'flex';
+                ci.focus();
+            }
+            if (e.key === 'Escape') cc.style.display = 'none';
         });
 
-        chatInput.addEventListener('keydown', e => {
+        ci.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
-                const cmd = chatInput.value.trim();
-                if (cmd === "BiB") {
-                    window.location.href = "/something.html";
-                } else {
-                    document.getElementById('chat-output').innerHTML += `<span class="chat-error">> Unknown command: ${cmd}</span><br>`;
+                const val = ci.value.trim();
+                if (val === "BiB") window.location.href = "/something.html";
+                else {
+                    document.getElementById('chat-output').innerHTML += `<span class="chat-error">> Unknown command: ${val}</span><br>`;
+                    document.getElementById('chat-output').scrollTop = document.getElementById('chat-output').scrollHeight;
                 }
-                chatInput.value = '';
+                ci.value = '';
             }
         });
 
