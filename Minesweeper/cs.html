@@ -1,36 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Scanner | Deep Trace</title>
+    <title>Protocol Decoder</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
         body { background: #020617; color: #38bdf8; font-family: 'JetBrains Mono', monospace; padding: 40px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        #board { display: grid; gap: 4px; justify-content: center; margin-top: 30px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
-        .cell { width: 32px; height: 32px; background: #1e293b; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 1px solid #334155; transition: 0.2s; }
-        .mine { background: #e11d48; color: white; box-shadow: 0 0 10px #e11d48; border: none; }
-        .revealed { background: #0f172a; border-color: #0ea5e9; color: #38bdf8; opacity: 0.9; }
-        .input-group { background: #0f172a; padding: 24px; border-radius: 16px; border: 1px solid #1e293b; margin-bottom: 20px; }
-        input { background: #000; border: 1px solid #38bdf8; color: #38bdf8; padding: 12px; width: 600px; outline: none; border-radius: 4px; margin-right: 10px; }
-        button { background: #0ea5e9; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .move-counter { margin-top: 10px; font-size: 0.8rem; color: #64748b; }
+        #board { display: grid; gap: 4px; justify-content: center; margin-top: 30px; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; }
+        .cell { width: 34px; height: 34px; background: #1e293b; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 1px solid #334155; }
+        .mine { background: #f43f5e; color: white; border-color: #f43f5e; box-shadow: 0 0 10px #f43f5e; }
+        .revealed { background: #0f172a; border-color: #0ea5e9; color: #38bdf8; }
+        .ui-panel { background: #0f172a; padding: 30px; border-radius: 20px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        input { background: #000; border: 1px solid #38bdf8; color: #38bdf8; padding: 15px; width: 600px; outline: none; border-radius: 8px; font-family: inherit; }
+        button { background: #0ea5e9; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #38bdf8; transform: translateY(-2px); }
+        select { background: #000; color: #fff; padding: 14px; border-radius: 8px; border: 1px solid #334155; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>BATTLE-SYNC SCANNER</h1>
-        <div class="input-group">
-            <input type="text" id="sid" placeholder="ENTER LONG TRACE ID_">
-            <select id="diff" style="background: #000; color: #fff; padding: 11px;">
-                <option value="beginner">BEGINNER</option>
-                <option value="intermediate">INTERMEDIATE</option>
-                <option value="expert">EXPERT</option>
-            </select>
-            <button onclick="sync()">EXECUTE SYNC</button>
-            <div id="move-info" class="move-counter">MOVES DETECTED: 0</div>
-        </div>
-        <div id="board"></div>
+    <div class="ui-panel">
+        <h1 style="margin-top:0">CELL SCANNER v5.0</h1>
+        <input type="text" id="sid" placeholder="PASTE FULL TRACE ID_">
+        <select id="diff">
+            <option value="beginner">BEGINNER</option>
+            <option value="intermediate">INTERMEDIATE</option>
+            <option value="expert">EXPERT</option>
+        </select>
+        <button onclick="sync()">EXECUTE SCAN</button>
+        <div id="info" style="margin-top:15px; font-size:12px; color:#64748b;">AWAITING TRACE DATA...</div>
     </div>
+    <div id="board"></div>
 
     <script>
         function seededRandom(s) { let x = Math.sin(s) * 10000; return x - Math.floor(x); }
@@ -43,79 +41,53 @@
             const moveData = sid.slice(8);
             const moves = [];
             for(let i=0; i < moveData.length; i+=2) {
-                moves.push({ 
-                    r: parseInt(moveData[i], 16), 
-                    c: parseInt(moveData[i+1], 16) 
-                });
+                moves.push({ r: parseInt(moveData[i], 16), c: parseInt(moveData[i+1], 16) });
             }
-            document.getElementById('move-info').textContent = `MOVES DETECTED: ${moves.length}`;
+            document.getElementById('info').textContent = `SCANNING: ${moves.length} INTERACTED NODES DETECTED`;
 
             const [rows, cols, mines] = { beginner: [9,9,10], intermediate: [16,16,40], expert: [16,30,99] }[document.getElementById('diff').value];
-            
-            // Step 1: Initialize
             const b = Array(rows).fill().map(() => Array(cols).fill().map(() => ({ isMine: false, isRevealed: false, count: 0 })));
             
-            // Step 2: If at least one move exists, mines were placed
             if (moves.length > 0) {
                 const first = moves[0];
                 let p = 0; let ts = worldSeed;
                 while (p < mines) {
                     const r = Math.floor(seededRandom(ts++) * rows);
                     const c = Math.floor(seededRandom(ts++) * cols);
-                    const isSafe = (Math.abs(r-first.r) <= 1 && Math.abs(c-first.c) <= 1);
-                    if (!b[r][c] && !isSafe) { b[r][c].isMine = true; p++; }
+                    if (!b[r][c] && !(Math.abs(r-first.r) <= 1 && Math.abs(c-first.c) <= 1)) { b[r][c].isMine = true; p++; }
+                }
+                for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
+                    if(b[r][c].isMine) continue;
+                    let n = 0;
+                    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++) {
+                        let nr=r+dr, nc=c+dc; if(nr>=0 && nr<rows && nc>=0 && nc<cols && b[nr][nc].isMine) n++;
+                    }
+                    b[r][c].count = n;
                 }
                 
-                // Step 3: Calc Numbers
-                for(let r=0; r<rows; r++) {
-                    for(let c=0; c<cols; c++) {
-                        if(b[r][c].isMine) continue;
-                        let n = 0;
-                        for(let dr=-1; dr<=1; dr++) {
-                            for(let dc=-1; dc<=1; dc++) {
-                                let nr=r+dr, nc=c+dc;
-                                if(nr>=0 && nr<rows && nc>=0 && nc<cols && b[nr][nc].isMine) n++;
-                            }
+                // Queue-based sync to avoid browser hang
+                moves.forEach(m => {
+                    let q = [[m.r, m.c]];
+                    while(q.length > 0) {
+                        let [currR, currC] = q.shift();
+                        if(currR < 0 || currR >= rows || currC < 0 || currC >= cols || b[currR][currC].isRevealed) continue;
+                        b[currR][currC].isRevealed = true;
+                        if(b[currR][currC].count === 0 && !b[currR][currC].isMine) {
+                            for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++) q.push([currR+dr, currC+dc]);
                         }
-                        b[r][c].count = n;
                     }
-                }
-
-                // Step 4: Replay Moves
-                moves.forEach(m => applyReveal(b, m.r, m.c, rows, cols));
+                });
             }
 
-            // Step 5: Render
             const boardDiv = document.getElementById('board');
-            boardDiv.innerHTML = '';
-            boardDiv.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
-            
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    if (b[r][c].isMine) {
-                        cell.classList.add('mine');
-                        cell.textContent = 'M';
-                    }
-                    if (b[r][c].isRevealed) {
-                        cell.classList.add('revealed');
-                        if (!b[r][c].isMine) {
-                            cell.textContent = b[r][c].count > 0 ? b[r][c].count : '';
-                        }
-                    }
-                    boardDiv.appendChild(cell);
+            boardDiv.innerHTML = ''; boardDiv.style.gridTemplateColumns = `repeat(${cols}, 34px)`;
+            for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell' + (b[r][c].isRevealed ? ' revealed' : '') + (b[r][c].isMine ? ' mine' : '');
+                if (b[r][c].isRevealed || b[r][c].isMine) {
+                    cell.textContent = b[r][c].isMine ? '●' : (b[r][c].count > 0 ? b[r][c].count : '');
                 }
-            }
-        }
-
-        function applyReveal(b, r, c, rows, cols) {
-            if (r<0 || r>=rows || c<0 || c>=cols || b[r][c].isRevealed) return;
-            b[r][c].isRevealed = true;
-            if (b[r][c].count === 0 && !b[r][c].isMine) {
-                for(let dr=-1; dr<=1; dr++) {
-                    for(let dc=-1; dc<=1; dc++) applyReveal(b, r+dr, c+dc, rows, cols);
-                }
+                boardDiv.appendChild(cell);
             }
         }
     </script>
