@@ -72,13 +72,26 @@
             align-items: center; z-index: 100; border-radius: 28px;
             backdrop-filter: blur(4px);
         }
+
+        /* Terminal Styling */
+        #terminal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px); z-index: 200; display: none;
+            flex-direction: column; padding: 40px; font-family: 'JetBrains Mono', monospace;
+        }
+        #terminal-input {
+            background: transparent; border: none; outline: none; color: #38bdf8;
+            width: 100%; font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
 
 <div class="glass-panel">
     <div id="status-overlay">
-        <h2 id="status-title" class="text-5xl font-black mb-8 italic tracking-tighter"></h2>
+        <h2 id="status-title" class="text-5xl font-black mb-2 italic tracking-tighter"></h2>
+        <p id="status-instruction" class="text-sky-500 font-mono text-xs mb-8 tracking-widest opacity-0"></p>
+        
         <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 text-white px-10 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-sky-500/20">RESTART</button>
     </div>
 
@@ -98,22 +111,98 @@
 
     <div id="game-board" oncontextmenu="return false;"></div>
 
-    <div class="mt-10 flex justify-center">
+    <div class="mt-10 flex flex-col items-center gap-4">
         <select onchange="changeDifficulty(this.value)" class="bg-slate-800 text-slate-300 text-sm font-bold rounded-xl px-6 py-3 border border-slate-700 outline-none cursor-pointer hover:bg-slate-700 transition-colors">
             <option value="beginner">BEGINNER</option>
             <option value="intermediate">INTERMEDIATE</option>
             <option value="expert">EXPERT</option>
         </select>
+        <span id="session-display" class="text-[10px] text-slate-600 font-mono tracking-widest uppercase"></span>
+    </div>
+</div>
+
+<div id="terminal-overlay">
+    <div class="text-sky-900 mb-2 font-bold tracking-tighter">ELITE_PROTOCOL_KERNEL_v1.0.9</div>
+    <div id="terminal-log" class="text-sm text-sky-500/80 mb-4 overflow-y-auto flex-1">
+        <div>System ready. Type commands to proceed...</div>
+    </div>
+    <div class="flex items-center gap-2 border-t border-sky-900 pt-4">
+        <span class="text-sky-400 font-bold">></span>
+        <input type="text" id="terminal-input" spellcheck="false" autocomplete="off">
     </div>
 </div>
 
 <script>
     let board, rows, cols, mines, cellsToReveal, gameRunning = false, time = 0, timerInterval;
     let currentDifficulty = 'beginner';
+    let hasWon = false;
 
+    // --- SESSION ID LOGIC ---
+    const sessionID = "EP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+    document.getElementById('session-display').innerText = "Session: " + sessionID;
+
+    // --- TERMINAL LOGIC ---
+    const termOverlay = document.getElementById('terminal-overlay');
+    const termInput = document.getElementById('terminal-input');
+    const termLog = document.getElementById('terminal-log');
+    let awaitingAuth = false;
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === '\\') {
+            e.preventDefault();
+            const isOpen = termOverlay.style.display === 'flex';
+            termOverlay.style.display = isOpen ? 'none' : 'flex';
+            if (!isOpen) termInput.focus();
+        }
+    });
+
+    termInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const val = termInput.value.trim();
+            logTerm(`> ${val}`, 'user');
+            
+            if (awaitingAuth) {
+                if (val === sessionID) {
+                    logTerm("AUTH_SUCCESS: EXECUTING WIN_PROTOCOL...", "sys");
+                    setTimeout(() => {
+                        termOverlay.style.display = 'none';
+                        endGame(true);
+                    }, 600);
+                } else {
+                    logTerm("AUTH_FAILURE: SESSION ID MISMATCH.", "error");
+                }
+                awaitingAuth = false;
+            } else if (val === "minesweeper -w=true") {
+                logTerm("SECURITY CHECK: ENTER SESSION ID TO CONFIRM ACTION.", "sys");
+                awaitingAuth = true;
+            } else if (val === "BiB") {
+                if (hasWon) {
+                    logTerm("REDIRECTING TO SECURE NODE...", "sys");
+                    setTimeout(() => { window.location.href = "something.html"; }, 1000);
+                } else {
+                    logTerm("ERROR: VICTORY STATUS NOT DETECTED. COMMAND LOCKED.", "error");
+                }
+            } else {
+                logTerm("UNKNOWN_COMMAND. ACCESS DENIED.", "error");
+            }
+            termInput.value = "";
+        }
+    });
+
+    function logTerm(msg, type) {
+        const div = document.createElement('div');
+        div.innerText = msg;
+        if (type === 'sys') div.className = "text-emerald-400";
+        if (type === 'error') div.className = "text-rose-500";
+        termLog.appendChild(div);
+        termLog.scrollTop = termLog.scrollHeight;
+    }
+
+    // --- ORIGINAL GAME LOGIC ---
     function startGame(level) {
         clearInterval(timerInterval);
         gameRunning = false;
+        hasWon = false;
         time = 0;
         currentDifficulty = level;
         
@@ -127,6 +216,7 @@
         document.getElementById('timer').textContent = "000";
         document.getElementById('mine-count').textContent = mines.toString().padStart(3, '0');
         document.getElementById('status-overlay').style.display = 'none';
+        document.getElementById('status-instruction').classList.add('opacity-0');
 
         board = Array(rows).fill().map(() => Array(cols).fill().map(() => ({ 
             isMine: false, isRevealed: false, count: 0 
@@ -173,7 +263,6 @@
         while (count < mines) {
             const r = Math.floor(Math.random() * rows);
             const c = Math.floor(Math.random() * cols);
-            // Ensure first click and neighbors are never mines
             if (!board[r][c].isMine && !(Math.abs(r - rS) <= 1 && Math.abs(c - cS) <= 1)) {
                 board[r][c].isMine = true;
                 count++;
@@ -225,6 +314,7 @@
 
     function endGame(won) {
         gameRunning = false;
+        hasWon = won;
         clearInterval(timerInterval);
         
         board.forEach((row, r) => row.forEach((cell, c) => {
@@ -233,9 +323,20 @@
 
         const overlay = document.getElementById('status-overlay');
         const title = document.getElementById('status-title');
+        const instruction = document.getElementById('status-instruction');
+        
         overlay.style.display = 'flex';
-        title.textContent = won ? "VICTORY" : "DEFEAT";
-        title.className = won ? "text-5xl font-black mb-8 italic text-emerald-400" : "text-5xl font-black mb-8 italic text-rose-500";
+        
+        if (won) {
+            title.textContent = "VICTORY";
+            title.className = "text-5xl font-black mb-2 italic text-emerald-400";
+            instruction.textContent = "ENTER BiB IN TERMINAL";
+            instruction.classList.remove('opacity-0');
+        } else {
+            title.textContent = "DEFEAT";
+            title.className = "text-5xl font-black mb-8 italic text-rose-500";
+            instruction.classList.add('opacity-0');
+        }
     }
 
     function changeDifficulty(v) {
