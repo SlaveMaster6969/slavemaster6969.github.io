@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minesweeper Modern</title>
+    <title>Minesweeper | Elite Trace</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&display=swap');
         
         body {
-            background-color: #0f172a;
+            background-color: #0b0f1a;
             font-family: 'Inter', sans-serif;
-            color: white;
+            color: #e2e8f0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -21,264 +21,378 @@
         }
 
         .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            position: relative;
+            z-index: 10;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
         }
 
         .stats-card {
             background: #1e293b;
-            padding: 12px 20px;
-            border-radius: 12px;
+            padding: 14px 24px;
+            border-radius: 14px;
             font-family: 'JetBrains Mono', monospace;
             border: 1px solid #334155;
+            min-width: 120px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            font-size: 1.8rem;
+            color: #38bdf8;
+            font-weight: 700;
         }
 
         #game-board {
             display: grid;
-            gap: 4px;
-            margin-top: 20px;
+            gap: 6px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
             user-select: none;
         }
 
         .cell {
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
             background: #334155;
-            border-radius: 6px;
+            border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
-            transition: all 0.15s ease;
-            font-size: 1.1rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.2rem;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .cell:hover {
+        .cell:hover:not(.revealed) {
             background: #475569;
-            transform: scale(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border-color: #38bdf8;
         }
 
         .cell.revealed {
-            background: #1e293b;
-            color: #94a3b8;
+            background: #0f172a;
+            border: 1px solid #1e293b;
             cursor: default;
         }
 
-        .cell.revealed:hover { transform: none; }
+        .cell.flag::after { content: '🚩'; font-size: 0.9rem; }
+        .cell.question::after { content: '?'; color: #fbbf24; }
 
-        /* Number Colors */
-        .n-1 { color: #38bdf8; } .n-2 { color: #4ade80; } .n-3 { color: #fb7185; }
-        .n-4 { color: #818cf8; } .n-5 { color: #fbbf24; }
+        /* Modern Number Pallette */
+        .n-1 { color: #38bdf8; } .n-2 { color: #4ade80; } .n-3 { color: #f43f5e; }
+        .n-4 { color: #818cf8; } .n-5 { color: #f59e0b; } .n-6 { color: #2dd4bf; }
 
-        .mine { background: #ef4444 !important; box-shadow: 0 0 15px #ef4444; }
-        
-        /* Modal Screens */
-        #overlay {
-            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9);
-            display: none; flex-direction: column; justify-content: center;
-            align-items: center; z-index: 50; border-radius: 16px;
-            animation: fadeIn 0.3s ease;
-        }
+        .mine { background: #e11d48 !important; box-shadow: 0 0 20px #e11d48; color: white; }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+        /* Session ID - Discrete Ghost Style */
         #sid-tag {
-            position: fixed; bottom: 10px; right: 10px;
-            font-size: 10px; font-family: 'JetBrains Mono'; color: #334155;
+            position: fixed;
+            bottom: 12px;
+            right: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: rgba(71, 85, 105, 0.4);
+            max-width: 400px;
+            word-break: break-all;
+            text-align: right;
+            line-height: 1.4;
+            transition: color 0.3s;
+            cursor: pointer;
         }
+        #sid-tag:hover { color: #38bdf8; }
 
-        /* Modern Console */
+        /* Console */
         #console-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-            display: none; justify-content: center; padding-top: 10vh; z-index: 100;
+            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95);
+            display: none; justify-content: center; align-items: flex-start; 
+            padding-top: 15vh; z-index: 1000; backdrop-filter: blur(8px);
         }
         #console-box {
-            width: 500px; height: 300px; background: #000; border: 1px solid #0ea5e9;
-            border-radius: 8px; padding: 20px; font-family: 'JetBrains Mono';
+            width: 600px; background: #000; border: 1px solid #38bdf8;
+            border-radius: 12px; padding: 24px; box-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
         }
+        #console-out {
+            height: 200px; overflow-y: auto; font-family: 'JetBrains Mono';
+            font-size: 0.85rem; color: #38bdf8; margin-bottom: 16px; line-height: 1.6;
+        }
+        #console-in {
+            width: 100%; background: #0a0a0a; border: 1px solid #1e293b;
+            color: #38bdf8; padding: 12px; font-family: 'JetBrains Mono';
+            outline: none; border-radius: 6px;
+        }
+
+        /* Overlay Messages */
+        #status-overlay {
+            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9);
+            display: none; flex-direction: column; justify-content: center;
+            align-items: center; z-index: 50; border-radius: 24px;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div class="glass-panel relative">
-    <div id="overlay">
-        <h2 id="overlay-title" class="text-4xl font-bold mb-4"></h2>
-        <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 px-6 py-2 rounded-full font-bold transition">TRY AGAIN</button>
+<div class="glass-panel">
+    <div id="status-overlay">
+        <h2 id="status-title" class="text-5xl font-bold mb-6 italic tracking-tighter"></h2>
+        <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 text-white px-8 py-3 rounded-full font-bold transition-all transform hover:scale-105 shadow-lg shadow-sky-500/20">
+            INITIALIZE NEW SESSION
+        </button>
     </div>
 
-    <div class="flex justify-between items-center gap-8 mb-6">
+    <div class="stats-container">
         <div class="stats-card">
-            <span class="text-xs text-slate-400 block uppercase">Mines</span>
-            <span id="mine-count" class="text-2xl text-sky-400">000</span>
+            <span class="label">Detection</span>
+            <span id="mine-count" class="value">000</span>
         </div>
-        <button onclick="startGame(currentDifficulty)" class="bg-slate-700 hover:bg-slate-600 p-3 rounded-xl transition">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+        <button onclick="startGame(currentDifficulty)" class="bg-slate-800 hover:bg-slate-700 p-4 rounded-2xl transition-all border border-slate-700 group">
+            <svg class="w-6 h-6 text-slate-400 group-hover:text-sky-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
         </button>
-        <div class="stats-card text-right">
-            <span class="text-xs text-slate-400 block uppercase">Time</span>
-            <span id="timer" class="text-2xl text-sky-400">000</span>
+        <div class="stats-card">
+            <span class="label">Uptime</span>
+            <span id="timer" class="value">000</span>
         </div>
     </div>
 
     <div id="game-board" oncontextmenu="return false;"></div>
 
-    <div class="mt-6 flex justify-between items-center">
-        <select onchange="changeDifficulty(this.value)" class="bg-slate-800 text-sm rounded-lg px-3 py-2 border border-slate-700 outline-none">
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="expert">Expert</option>
-        </select>
-        <span class="text-slate-500 text-xs font-mono">ID READY</span>
+    <div class="mt-8 flex justify-between items-center">
+        <div class="flex gap-2">
+            <select id="diff-select" onchange="changeDifficulty(this.value)" class="bg-slate-800 text-slate-300 text-xs font-bold rounded-lg px-4 py-2 border border-slate-700 outline-none hover:bg-slate-700 transition-colors cursor-pointer">
+                <option value="beginner">CLASS: BEGINNER</option>
+                <option value="intermediate">CLASS: INTERMEDIATE</option>
+                <option value="expert">CLASS: EXPERT</option>
+            </select>
+        </div>
+        <div class="text-[10px] font-mono text-slate-600 tracking-widest uppercase">Encryption Active</div>
     </div>
 </div>
 
-<div id="sid-tag"></div>
+<div id="sid-tag" onclick="copySID()">...</div>
 
 <div id="console-overlay">
     <div id="console-box">
-        <div id="console-out" class="text-sky-500 mb-4 h-48 overflow-auto">> TERMINAL_INIT...</div>
-        <input type="text" id="console-in" class="w-full bg-transparent border-t border-sky-900 pt-2 outline-none text-sky-400" autofocus placeholder="COMMAND_">
+        <div id="console-out">> SYSTEM_OS v4.0.2...<br>> ENCRYPTION_KEY_LINKED<br>> STANDING_BY...</div>
+        <input type="text" id="console-in" placeholder="TYPE_COMMAND_HERE" autofocus>
     </div>
 </div>
 
 <script>
-    let board, rows, cols, mines, cellsToReveal, gameRunning = false, timerInterval, time = 0, currentDifficulty = 'beginner';
-    let currentSeed = 0;
-    const DEFS = { beginner: [9, 9, 10], intermediate: [16, 16, 40], expert: [16, 30, 99] };
+    let board, rows, cols, mines, cellsToReveal, gameRunning = false, time = 0, timerInterval;
+    let currentDifficulty = 'beginner';
+    let worldSeed = ""; 
+    let moveHistory = ""; 
 
-    function seededRandom(seed) {
-        let x = Math.sin(seed) * 10000;
+    const DEFS = {
+        beginner: [9, 9, 10],
+        intermediate: [16, 16, 40],
+        expert: [16, 30, 99]
+    };
+
+    function seededRandom(s) {
+        let x = Math.sin(s) * 10000;
         return x - Math.floor(x);
     }
 
     function startGame(level) {
         clearInterval(timerInterval);
-        gameRunning = false; time = 0; currentDifficulty = level;
+        gameRunning = false; time = 0;
+        currentDifficulty = level;
         [rows, cols, mines] = DEFS[level];
         cellsToReveal = rows * cols - mines;
-        currentSeed = Math.floor(Math.random() * 0x7FFFFFFF);
         
-        document.getElementById('overlay').style.display = 'none';
-        document.getElementById('sid-tag').textContent = "";
+        worldSeed = Math.floor(Math.random() * 0xFFFFFFFF).toString(16).toUpperCase().padStart(8, '0');
+        moveHistory = "";
         
-        board = Array(rows).fill().map(() => Array(cols).fill().map(() => ({ 
-            isMine: false, isRevealed: false, state: 0, count: 0 
+        document.getElementById('status-overlay').style.display = 'none';
+        document.getElementById('timer').textContent = "000";
+        updateSIDDisplay();
+
+        board = Array(rows).fill().map(() => Array(cols).fill().map(() => ({
+            isMine: false, isRevealed: false, state: 0, count: 0
         })));
 
         const gb = document.getElementById('game-board');
         gb.innerHTML = '';
-        gb.style.gridTemplateColumns = `repeat(${cols}, 36px)`;
+        gb.style.gridTemplateColumns = `repeat(${cols}, 38px)`;
         
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                cell.id = `c-${r}-${c}`;
+                cell.id = `cell-${r}-${c}`;
                 cell.onmousedown = (e) => {
-                    if (e.button === 0) handleLeft(r, c);
-                    if (e.button === 2) handleRight(r, c);
+                    if (e.button === 0) handleLeftClick(r, c);
+                    if (e.button === 2) handleRightClick(r, c);
                 };
                 gb.appendChild(cell);
             }
         }
-        updateUI();
+        updateMineCount();
     }
 
-    function handleLeft(r, c) {
+    function handleLeftClick(r, c) {
         if (!gameRunning && time === 0) {
             placeMines(r, c);
-            const sid = currentSeed.toString(16).toUpperCase() + r.toString(16).toUpperCase() + c.toString(16).toUpperCase();
-            document.getElementById('sid-tag').textContent = sid;
             gameRunning = true;
-            timerInterval = setInterval(() => { time++; updateUI(); }, 1000);
+            timerInterval = setInterval(() => {
+                time++;
+                document.getElementById('timer').textContent = time.toString().padStart(3, '0');
+            }, 1000);
         }
         if (!gameRunning || board[r][c].isRevealed || board[r][c].state === 1) return;
-        if (board[r][c].isMine) return finish(false, r, c);
+
+        // Trace logic: Append Hex coords
+        moveHistory += r.toString(16).toUpperCase() + c.toString(16).toUpperCase();
+        updateSIDDisplay();
+
+        if (board[r][c].isMine) {
+            return endGame(false, r, c);
+        }
+        
         reveal(r, c);
-        if (cellsToReveal === 0) finish(true);
+        if (cellsToReveal === 0) endGame(true);
     }
 
-    function placeMines(rS, cS) {
-        let p = 0; let ts = currentSeed;
-        while (p < mines) {
-            const r = Math.floor(seededRandom(ts++) * rows);
-            const c = Math.floor(seededRandom(ts++) * cols);
-            if (!board[r][c].isMine && (Math.abs(r-rS) > 1 || Math.abs(c-cS) > 1)) {
-                board[r][c].isMine = true; p++;
+    function placeMines(rStart, cStart) {
+        let placed = 0;
+        let tSeed = parseInt(worldSeed, 16);
+        while (placed < mines) {
+            const r = Math.floor(seededRandom(tSeed++) * rows);
+            const c = Math.floor(seededRandom(tSeed++) * cols);
+            const isSafe = (Math.abs(r - rStart) <= 1 && Math.abs(c - cStart) <= 1);
+            if (!board[r][c].isMine && !isSafe) {
+                board[r][c].isMine = true;
+                placed++;
             }
         }
-        for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
-            if(board[r][c].isMine) continue;
-            let n = 0;
-            for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++) {
-                let nr=r+dr, nc=c+dc;
-                if(nr>=0 && nr<rows && nc>=0 && nc<cols && board[nr][nc].isMine) n++;
+        for(let r=0; r<rows; r++) {
+            for(let c=0; c<cols; c++) {
+                if(board[r][c].isMine) continue;
+                let n = 0;
+                for(let dr=-1; dr<=1; dr++) {
+                    for(let dc=-1; dc<=1; dc++) {
+                        let nr=r+dr, nc=c+dc;
+                        if(nr>=0 && nr<rows && nc>=0 && nc<cols && board[nr][nc].isMine) n++;
+                    }
+                }
+                board[r][c].count = n;
             }
-            board[r][c].count = n;
         }
     }
 
     function reveal(r, c) {
-        if (r<0 || r>=rows || c<0 || c>=cols || board[r][c].isRevealed || board[r][c].state !== 0) return;
-        board[r][c].isRevealed = true; cellsToReveal--;
-        const el = document.getElementById(`c-${r}-${c}`);
+        if (r < 0 || r >= rows || c < 0 || c >= cols || board[r][c].isRevealed || board[r][c].state !== 0) return;
+        board[r][c].isRevealed = true;
+        cellsToReveal--;
+        const el = document.getElementById(`cell-${r}-${c}`);
         el.classList.add('revealed');
         if (board[r][c].count > 0) {
             el.textContent = board[r][c].count;
             el.classList.add(`n-${board[r][c].count}`);
         } else {
-            for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++) reveal(r+dr, c+dc);
+            for(let dr=-1; dr<=1; dr++) {
+                for(let dc=-1; dc<=1; dc++) reveal(r+dr, c+dc);
+            }
         }
     }
 
-    function handleRight(r, c) {
+    function handleRightClick(r, c) {
         if (!gameRunning || board[r][c].isRevealed) return;
+        const el = document.getElementById(`cell-${r}-${c}`);
         board[r][c].state = (board[r][c].state + 1) % 3;
-        const el = document.getElementById(`c-${r}-${c}`);
-        el.innerHTML = board[r][c].state === 1 ? '🚩' : (board[r][c].state === 2 ? '?' : '');
-        updateUI();
+        el.className = 'cell' + (board[r][c].state === 1 ? ' flag' : (board[r][c].state === 2 ? ' question' : ''));
+        updateMineCount();
     }
 
-    function finish(won, r, c) {
-        gameRunning = false; clearInterval(timerInterval);
-        if (!won) {
-            board.forEach((row, ri) => row.forEach((cell, ci) => {
-                const el = document.getElementById(`c-${ri}-${ci}`);
-                if (cell.isMine) {
-                    el.classList.add('revealed', 'mine');
-                    el.innerHTML = '●';
-                }
-            }));
-        }
+    function endGame(won, r, c) {
+        gameRunning = false;
+        clearInterval(timerInterval);
+        
+        board.forEach((row, ri) => row.forEach((cell, ci) => {
+            if (cell.isMine) {
+                const el = document.getElementById(`cell-${ri}-${ci}`);
+                el.classList.add('revealed', 'mine');
+                el.innerHTML = '●';
+                if (ri === r && ci === c) el.style.background = '#000';
+            }
+        }));
+
         setTimeout(() => {
-            const over = document.getElementById('overlay');
-            over.style.display = 'flex';
-            document.getElementById('overlay-title').textContent = won ? "VICTORY" : "GAME OVER";
-            document.getElementById('overlay-title').className = won ? "text-4xl font-bold mb-4 text-emerald-400" : "text-4xl font-bold mb-4 text-rose-500";
-        }, 500);
+            const overlay = document.getElementById('status-overlay');
+            const title = document.getElementById('status-title');
+            overlay.style.display = 'flex';
+            title.textContent = won ? "MISSION ACCOMPLISHED" : "SYSTEM COMPROMISED";
+            title.className = won ? "text-5xl font-bold mb-6 italic tracking-tighter text-emerald-400" : "text-5xl font-bold mb-6 italic tracking-tighter text-rose-500";
+        }, 600);
     }
 
-    function updateUI() {
-        let f = 0; board.forEach(r => r.forEach(c => { if(c.state === 1) f++; }));
+    function updateMineCount() {
+        let f = 0;
+        board.forEach(row => row.forEach(c => { if(c.state === 1) f++; }));
         document.getElementById('mine-count').textContent = Math.max(0, mines - f).toString().padStart(3, '0');
-        document.getElementById('timer').textContent = Math.min(999, time).toString().padStart(3, '0');
     }
 
-    function changeDifficulty(v) { currentDifficulty = v; startGame(v); }
+    function updateSIDDisplay() {
+        document.getElementById('sid-tag').textContent = worldSeed + moveHistory;
+    }
 
+    function copySID() {
+        navigator.clipboard.writeText(worldSeed + moveHistory);
+        const tag = document.getElementById('sid-tag');
+        const old = tag.textContent;
+        tag.textContent = "COPIED TO CLIPBOARD";
+        setTimeout(() => tag.textContent = old, 1000);
+    }
+
+    function changeDifficulty(v) { startGame(v); }
+
+    // Console
     window.addEventListener('keydown', e => {
-        if (e.key === '\\') { e.preventDefault(); document.getElementById('console-overlay').style.display = 'flex'; document.getElementById('console-in').focus(); }
+        if (e.key === '\\') {
+            e.preventDefault();
+            document.getElementById('console-overlay').style.display = 'flex';
+            document.getElementById('console-in').focus();
+        }
         if (e.key === 'Escape') document.getElementById('console-overlay').style.display = 'none';
     });
 
     document.getElementById('console-in').addEventListener('keydown', e => {
         if (e.key === 'Enter') {
-            if (e.target.value === "BiB") window.location.href = "something.html";
+            const val = e.target.value.trim();
+            if (val === "BiB") window.location.href = "something.html";
+            else {
+                document.getElementById('console-out').innerHTML += `<div>> INVALID_CMD: ${val}</div>`;
+                document.getElementById('console-out').scrollTop = document.getElementById('console-out').scrollHeight;
+            }
             e.target.value = '';
         }
     });
