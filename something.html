@@ -1,173 +1,238 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Start Cloud Browser Session V2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Browser | Elite Protocol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            padding: 50px; 
-            background-color: #f4f7f6;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&display=swap');
+        
+        :root { --primary: #38bdf8; --danger: #f43f5e; --bg-dark: #0b0f1a; }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Inter', sans-serif;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0b0f1a 100%);
         }
-        h1 {
-            color: #333;
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
         }
-        .warning-box {
-            background-color: #fff3cd; 
-            color: #856404;
-            border: 1px solid #ffeeba;
+
+        .terminal-text {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
+
+        .warning-card {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            padding: 20px;
+            border-radius: 18px;
+            margin: 25px 0;
+            text-align: left;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .warning-title {
+            color: var(--danger);
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* High-tech Glowing Spinner */
+        .spinner-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(56, 189, 248, 0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-box {
+            background: rgba(244, 63, 94, 0.2);
+            border: 1px solid var(--danger);
+            color: #fff;
             padding: 15px;
-            margin: 20px auto;
-            max-width: 500px;
-            border-radius: 5px;
-            font-size: 0.95em;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
         }
-        .disclaimer-title {
-            font-weight: bold;
-            text-decoration: underline;
-        }
-        .spinner { 
-            border: 4px solid #e0e0e0; 
-            border-top: 4px solid #007bff; /* Blue spinner */
-            border-radius: 50%; 
-            width: 40px; 
-            height: 40px; 
-            animation: spin 1s linear infinite; 
-            margin: 20px auto; 
-        }
-        @keyframes spin { 
-            0% { transform: rotate(0deg); } 
-            100% { transform: rotate(360deg); } 
-        }
-        .error { 
-            color: #dc3545; 
-            font-weight: bold; 
-            border: 1px solid #dc3545;
-            padding: 10px;
-            margin: 20px auto;
-            max-width: 400px;
-            background-color: #f8d7da;
-        }
+
         #countdown {
+            font-size: 1.5rem;
             font-weight: bold;
-            color: #007bff;
+            color: var(--primary);
+        }
+
+        .btn-redirect {
+            background: var(--primary);
+            color: #0b0f1a;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+
+        .btn-redirect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
         }
     </style>
 </head>
 <body>
-    <h1>Cloud Browser Session Initializer</h1>
+
+<div class="glass-panel">
+    <h1 class="text-3xl font-black italic tracking-tighter mb-2">CLOUD_BROWSER</h1>
+    <p class="terminal-text text-xs uppercase tracking-widest opacity-70">Session Initializer v2.0.4</p>
     
-    <div class="warning-box">
-        <p class="disclaimer-title">⚠️ PLEASE READ BEFORE PROCEEDING</p>
-        <p>1. **SECURITY RISK (API Key):** This file contains your API Key. **DO NOT** share this file or upload it to a public server.</p>
-        <p>2. **Session Limit:** Sessions are typically limited to **about 5 minutes**. To continue working after the time limit, you must **close the current tab** and **open this HTML file again** to generate a new session.</p>
+    <div class="warning-card">
+        <span class="warning-title">⚠️ Security Protocol</span>
+        <p>1. <strong>API PROTECTION:</strong> This node contains active credentials. Distribution is strictly prohibited.</p>
+        <p class="mt-2">2. <strong>TEMPORAL LIMIT:</strong> Sessions expire in <strong>5 minutes</strong>. Re-initialization is required for extended uplink.</p>
     </div>
     
     <div id="countdown-message">
-        <p>Starting session request in <span id="countdown">5</span> seconds...</p>
+        <p class="text-slate-400 text-sm">Requesting handshake in...</p>
+        <div id="countdown" class="mt-2">5</div>
     </div>
 
-    <div class="spinner" id="loading-spinner" style="display:none;"></div>
-    <p id="status-message"></p>
-    <p>
-        <a id="live-link" href="#" style="display:none; color: #28a745; font-weight: bold;">
-            Click here if not redirected automatically
-        </a>
-    </p>
+    <div class="spinner-box" id="loading-spinner" style="display:none;">
+        <div class="spinner"></div>
+    </div>
 
-    <script>
-        // ----------------------------------------------------------------------------------
-        // --- !!! 1. REPLACE THE API KEY BELOW !!! ---
-        const API_KEY = "bu_w0Q-M4FuLiw0bM47S_y1pvuttA_yxHpgyRMPdbxdHjs"; 
+    <p id="status-message" class="terminal-text text-sm mt-4"></p>
+    
+    <div id="redirect-container" class="hidden">
+        <a id="live-link" href="#" class="btn-redirect">MANUAL OVERRIDE</a>
+        <p class="text-xs text-slate-500 mt-4 italic">Redirecting to live stream...</p>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURATION ---
+    const API_KEY = "bu_w0Q-M4FuLiw0bM47S_y1pvuttA_yxHpgyRMPdbxdHjs"; 
+    const API_ENDPOINT = "https://api.browser-use.com/api/v2/sessions";
+    const SESSION_BODY = {
+        "startUrl": "https://Google.com",
+        "proxyCountryCode": "us"
+    };
+
+    const statusMessage = document.getElementById('status-message');
+    const liveLink = document.getElementById('live-link');
+    const spinner = document.getElementById('loading-spinner');
+    const countdownElement = document.getElementById('countdown');
+    const countdownMessageDiv = document.getElementById('countdown-message');
+    const redirectContainer = document.getElementById('redirect-container');
+
+    function startCountdown(seconds) {
+        let count = seconds;
+        countdownElement.textContent = count;
         
-        // --- 2. API Endpoint and Request Configuration ---
-        const API_ENDPOINT = "https://api.browser-use.com/api/v2/sessions";
-        const SESSION_BODY = {
-            "startUrl": "https://Google.com",
-            "proxyCountryCode": "us"
-        };
-        // ----------------------------------------------------------------------------------
-
-        const statusMessage = document.getElementById('status-message');
-        const liveLink = document.getElementById('live-link');
-        const spinner = document.getElementById('loading-spinner');
-        const countdownElement = document.getElementById('countdown');
-        const countdownMessageDiv = document.getElementById('countdown-message');
-
-        /**
-         * Counts down and then triggers the API call.
-         */
-        function startCountdown(seconds) {
-            let count = seconds;
+        const interval = setInterval(() => {
+            count--;
             countdownElement.textContent = count;
             
-            const interval = setInterval(() => {
-                count--;
-                countdownElement.textContent = count;
-                
-                if (count <= 0) {
-                    clearInterval(interval);
-                    countdownMessageDiv.style.display = 'none';
-                    spinner.style.display = 'block';
-                    createSessionAndRedirect();
-                }
-            }, 1000);
-        }
-
-        async function createSessionAndRedirect() {
-            statusMessage.textContent = "Sending request to start session...";
-            
-            try {
-                // 1. Make the POST request
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'X-Browser-Use-API-Key': API_KEY, 
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(SESSION_BODY)
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    let errorMessage = errorText;
-                    try {
-                        const errorData = JSON.parse(errorText);
-                        errorMessage = errorData.message || errorText;
-                    } catch {} 
-
-                    throw new Error(`[${response.status} ${response.statusText}] ${errorMessage}`);
-                }
-
-                // 2. Parse the successful JSON response
-                const data = await response.json();
-                const liveUrl = data.liveUrl; 
-
-                // 3. Handle the live URL
-                if (liveUrl) {
-                    statusMessage.textContent = "Success! Redirecting to Live Session View...";
-                    spinner.style.display = 'none';
-                    liveLink.href = liveUrl;
-                    liveLink.style.display = 'inline';
-
-                    // Final step: Redirect the browser
-                    window.location.href = liveUrl;
-                } else {
-                    throw new Error("API responded successfully but the required 'liveUrl' was missing from the response.");
-                }
-
-            } catch (error) {
-                // Display error message
-                spinner.style.display = 'none';
-                statusMessage.className = 'error';
-                statusMessage.innerHTML = `<strong>Session Creation Error:</strong><br>${error.message}<br><br>Check the browser console (F12) for detailed network errors.`;
-                console.error("Browser Use API Error:", error);
+            if (count <= 0) {
+                clearInterval(interval);
+                countdownMessageDiv.style.display = 'none';
+                spinner.style.display = 'flex';
+                createSessionAndRedirect();
             }
-        }
+        }, 1000);
+    }
 
-        // Start the process with a 5-second delay for reading the disclaimer
-        startCountdown(5); 
-    </script>
+    async function createSessionAndRedirect() {
+        statusMessage.textContent = "INITIALIZING UPLINK...";
+        
+        try {
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'X-Browser-Use-API-Key': API_KEY, 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(SESSION_BODY)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage = errorText;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorText;
+                } catch {} 
+                throw new Error(`[${response.status}] ${errorMessage}`);
+            }
+
+            const data = await response.json();
+            const liveUrl = data.liveUrl; 
+
+            if (liveUrl) {
+                statusMessage.textContent = "HANDSHAKE COMPLETE. REDIRECTING...";
+                spinner.style.display = 'none';
+                liveLink.href = liveUrl;
+                redirectContainer.classList.remove('hidden');
+
+                // Auto-redirect
+                setTimeout(() => {
+                    window.location.href = liveUrl;
+                }, 1500);
+            } else {
+                throw new Error("API RESPONSE INVALID: MISSING LIVE_URL");
+            }
+
+        } catch (error) {
+            spinner.style.display = 'none';
+            statusMessage.style.display = 'none';
+            
+            const errDiv = document.createElement('div');
+            errDiv.className = 'error-box';
+            errDiv.innerHTML = `<strong>CRITICAL_ERROR:</strong><br>${error.message}`;
+            document.querySelector('.glass-panel').appendChild(errDiv);
+        }
+    }
+
+    startCountdown(5); 
+</script>
 </body>
 </html>
