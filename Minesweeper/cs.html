@@ -3,17 +3,17 @@
 <head>
     <title>Minesweeper Decoder</title>
     <style>
-        body { background: #121212; color: #aaa; font-family: monospace; text-align: center; padding: 20px; }
-        #board { display: grid; gap: 2px; justify-content: center; margin-top: 20px; background: #333; padding: 10px; border-radius: 4px; }
-        .c { width: 25px; height: 25px; background: #222; border: 1px solid #444; display: flex; align-items: center; justify-content: center; }
-        .m { background: #96281b; color: white; }
-        .s { border: 2px solid #f1c40f; } /* Safe Zone marker */
-        input, select, button { background: #222; border: 1px solid #444; color: #0f0; padding: 8px; margin: 5px; }
+        body { background: #1a1a1a; color: #0f0; font-family: monospace; text-align: center; padding: 20px; }
+        #board { display: grid; gap: 1px; justify-content: center; margin-top: 20px; background: #333; padding: 5px; }
+        .c { width: 25px; height: 25px; background: #c0c0c0; border: 1px solid #888; color: black; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .m { background: #ff4d4d; }
+        .s { border: 2px solid yellow; }
+        input, select, button { background: #222; border: 1px solid #0f0; color: #0f0; padding: 10px; margin: 5px; }
     </style>
 </head>
 <body>
-    <h2>DECODER TOOL</h2>
-    <input type="text" id="sid" placeholder="SID (e.g. 5E2A1F02)">
+    <h2>MAP DECODER</h2>
+    <input type="text" id="sid" placeholder="ENTER SID">
     <select id="diff">
         <option value="beginner">Beginner</option>
         <option value="intermediate">Intermediate</option>
@@ -23,31 +23,23 @@
     <div id="board"></div>
 
     <script>
-        function seededRandom(seed) {
-            const x = Math.sin(seed) * 10000;
-            return x - Math.floor(x);
-        }
+        function seededRandom(s) { let x = Math.sin(s) * 10000; return x - Math.floor(x); }
 
         function decode() {
-            const fullSid = document.getElementById('sid').value.trim();
-            if (fullSid.length < 3) return;
-
-            const fCol = parseInt(fullSid.slice(-1), 16);
-            const fRow = parseInt(fullSid.slice(-2, -1), 16);
-            const seed = parseInt(fullSid.slice(0, -2), 16);
+            const sid = document.getElementById('sid').value.trim();
+            if (sid.length < 3) return;
+            const fCol = parseInt(sid.slice(-1), 16);
+            const fRow = parseInt(sid.slice(-2, -1), 16);
+            const seed = parseInt(sid.slice(0, -2), 16);
             
-            const level = document.getElementById('diff').value;
-            const cfg = { 'beginner': [9,9,10], 'intermediate': [16,16,40], 'expert': [16,30,99] };
-            const [rows, cols, mines] = cfg[level];
+            const [rows, cols, mines] = { beginner: [9,9,10], intermediate: [16,16,40], expert: [16,30,99] }[document.getElementById('diff').value];
             
             const b = Array(rows).fill().map(() => Array(cols).fill(false));
-            let placed = 0; let tSeed = seed;
-
-            while (placed < mines) {
-                const r = Math.floor(seededRandom(tSeed++) * rows);
-                const c = Math.floor(seededRandom(tSeed++) * cols);
-                const isSafe = (Math.abs(r - fRow) <= 1 && Math.abs(c - fCol) <= 1);
-                if (!b[r][c] && !isSafe) { b[r][c] = true; placed++; }
+            let p = 0; let ts = seed;
+            while (p < mines) {
+                const r = Math.floor(seededRandom(ts++) * rows);
+                const c = Math.floor(seededRandom(ts++) * cols);
+                if (!b[r][c] && !(Math.abs(r-fRow) <= 1 && Math.abs(c-fCol) <= 1)) { b[r][c] = true; p++; }
             }
 
             const boardDiv = document.getElementById('board');
@@ -59,7 +51,7 @@
                     const cell = document.createElement('div');
                     cell.className = 'c' + (b[r][c] ? ' m' : '');
                     if (r === fRow && c === fCol) cell.classList.add('s');
-                    cell.innerHTML = b[r][c] ? '&#x1f4a3;' : '';
+                    cell.innerHTML = b[r][c] ? '💣' : '';
                     boardDiv.appendChild(cell);
                 }
             }
