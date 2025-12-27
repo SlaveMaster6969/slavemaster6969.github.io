@@ -3,13 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minesweeper | Elite Trace</title>
+    <title>Minesweeper | Elite Trace Protocol</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&display=swap');
         
+        :root {
+            --primary: #38bdf8;
+            --danger: #f43f5e;
+            --bg-dark: #0b0f1a;
+            --panel-bg: rgba(15, 23, 42, 0.85);
+        }
+
         body {
-            background-color: #0b0f1a;
+            background-color: var(--bg-dark);
             font-family: 'Inter', sans-serif;
             color: #e2e8f0;
             display: flex;
@@ -18,153 +25,166 @@
             min-height: 100vh;
             margin: 0;
             overflow: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0b0f1a 100%);
         }
 
+        /* Main Game Container */
         .glass-panel {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(16px);
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.1);
             position: relative;
             z-index: 10;
         }
 
+        /* Header Stats Section */
         .stats-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
-            margin-bottom: 24px;
+            gap: 24px;
+            margin-bottom: 30px;
         }
 
         .stats-card {
             background: #1e293b;
-            padding: 14px 24px;
-            border-radius: 14px;
+            padding: 16px 28px;
+            border-radius: 18px;
             font-family: 'JetBrains Mono', monospace;
             border: 1px solid #334155;
-            min-width: 120px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            min-width: 140px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+            transition: border-color 0.3s ease;
+        }
+
+        .stats-card:hover {
+            border-color: var(--primary);
         }
 
         .label {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: #94a3b8;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.15em;
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .value {
-            font-size: 1.8rem;
-            color: #38bdf8;
+            font-size: 2rem;
+            color: var(--primary);
             font-weight: 700;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
         }
 
+        /* The Board Grid */
         #game-board {
             display: grid;
             gap: 6px;
-            padding: 10px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
             user-select: none;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .cell {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             background: #334155;
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: 800;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 1.2rem;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 1.25rem;
             position: relative;
             border: 1px solid rgba(255,255,255,0.05);
         }
 
         .cell:hover:not(.revealed) {
             background: #475569;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border-color: #38bdf8;
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+            border-color: var(--primary);
+            z-index: 2;
         }
 
         .cell.revealed {
             background: #0f172a;
             border: 1px solid #1e293b;
             cursor: default;
+            transform: none;
         }
 
-        .cell.flag::after { content: '🚩'; font-size: 0.9rem; }
-        .cell.question::after { content: '?'; color: #fbbf24; }
-
-        /* Modern Number Pallette */
+        /* Number Colors */
         .n-1 { color: #38bdf8; } .n-2 { color: #4ade80; } .n-3 { color: #f43f5e; }
         .n-4 { color: #818cf8; } .n-5 { color: #f59e0b; } .n-6 { color: #2dd4bf; }
 
-        .mine { background: #e11d48 !important; box-shadow: 0 0 20px #e11d48; color: white; }
-
-        /* Session ID - Discrete Ghost Style */
-        #sid-tag {
-            position: fixed;
-            bottom: 12px;
-            right: 16px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            color: rgba(71, 85, 105, 0.4);
-            max-width: 400px;
-            word-break: break-all;
-            text-align: right;
-            line-height: 1.4;
-            transition: color 0.3s;
-            cursor: pointer;
-        }
-        #sid-tag:hover { color: #38bdf8; }
-
-        /* Console */
-        #console-overlay {
-            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95);
-            display: none; justify-content: center; align-items: flex-start; 
-            padding-top: 15vh; z-index: 1000; backdrop-filter: blur(8px);
-        }
-        #console-box {
-            width: 600px; background: #000; border: 1px solid #38bdf8;
-            border-radius: 12px; padding: 24px; box-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
-        }
-        #console-out {
-            height: 200px; overflow-y: auto; font-family: 'JetBrains Mono';
-            font-size: 0.85rem; color: #38bdf8; margin-bottom: 16px; line-height: 1.6;
-        }
-        #console-in {
-            width: 100%; background: #0a0a0a; border: 1px solid #1e293b;
-            color: #38bdf8; padding: 12px; font-family: 'JetBrains Mono';
-            outline: none; border-radius: 6px;
+        .mine { 
+            background: var(--danger) !important; 
+            box-shadow: 0 0 25px var(--danger); 
+            color: white; 
+            animation: pulse 1s infinite alternate;
         }
 
-        /* Overlay Messages */
+        @keyframes pulse {
+            from { opacity: 1; } to { opacity: 0.7; }
+        }
+
+        /* Overlays */
         #status-overlay {
-            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9);
+            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.95);
             display: none; flex-direction: column; justify-content: center;
-            align-items: center; z-index: 50; border-radius: 24px;
-            animation: fadeIn 0.4s ease;
+            align-items: center; z-index: 100; border-radius: 28px;
+            animation: fadeIn 0.5s ease;
         }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Console Window */
+        #console-overlay {
+            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9);
+            display: none; justify-content: center; align-items: flex-start; 
+            padding-top: 15vh; z-index: 1000; backdrop-filter: blur(10px);
+        }
+
+        #console-box {
+            width: 700px; background: #000; border: 1px solid var(--primary);
+            border-radius: 16px; padding: 30px; box-shadow: 0 0 50px rgba(56, 189, 248, 0.2);
+        }
+
+        #console-out {
+            height: 250px; overflow-y: auto; font-family: 'JetBrains Mono';
+            font-size: 0.9rem; color: var(--primary); margin-bottom: 20px;
+            line-height: 1.6; border-bottom: 1px solid #1e293b;
+        }
+
+        #console-in {
+            width: 100%; background: transparent; color: var(--primary);
+            font-family: 'JetBrains Mono'; outline: none; border: none; font-size: 1rem;
+        }
+
+        /* Trace ID display */
+        #sid-tag {
+            position: fixed; bottom: 20px; right: 25px;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            color: rgba(71, 85, 105, 0.6); max-width: 500px;
+            word-break: break-all; cursor: pointer; transition: 0.3s;
+        }
+        #sid-tag:hover { color: var(--primary); }
     </style>
 </head>
 <body>
 
 <div class="glass-panel">
     <div id="status-overlay">
-        <h2 id="status-title" class="text-5xl font-bold mb-6 italic tracking-tighter"></h2>
-        <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 text-white px-8 py-3 rounded-full font-bold transition-all transform hover:scale-105 shadow-lg shadow-sky-500/20">
-            INITIALIZE NEW SESSION
+        <h2 id="status-title" class="text-6xl font-black mb-8 italic tracking-tighter"></h2>
+        <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 text-white px-10 py-4 rounded-2xl font-bold transition-all transform hover:scale-105 shadow-2xl shadow-sky-500/30">
+            RESET PROTOCOL
         </button>
     </div>
 
@@ -173,10 +193,10 @@
             <span class="label">Detection</span>
             <span id="mine-count" class="value">000</span>
         </div>
-        <button onclick="startGame(currentDifficulty)" class="bg-slate-800 hover:bg-slate-700 p-4 rounded-2xl transition-all border border-slate-700 group">
-            <svg class="w-6 h-6 text-slate-400 group-hover:text-sky-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <button onclick="startGame(currentDifficulty)" class="bg-slate-800 hover:bg-slate-700 p-5 rounded-2xl border border-slate-700 group transition-all">
+            <svg class="w-8 h-8 text-slate-400 group-hover:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
         </button>
-        <div class="stats-card">
+        <div class="stats-card text-right">
             <span class="label">Uptime</span>
             <span id="timer" class="value">000</span>
         </div>
@@ -184,15 +204,13 @@
 
     <div id="game-board" oncontextmenu="return false;"></div>
 
-    <div class="mt-8 flex justify-between items-center">
-        <div class="flex gap-2">
-            <select id="diff-select" onchange="changeDifficulty(this.value)" class="bg-slate-800 text-slate-300 text-xs font-bold rounded-lg px-4 py-2 border border-slate-700 outline-none hover:bg-slate-700 transition-colors cursor-pointer">
-                <option value="beginner">CLASS: BEGINNER</option>
-                <option value="intermediate">CLASS: INTERMEDIATE</option>
-                <option value="expert">CLASS: EXPERT</option>
-            </select>
-        </div>
-        <div class="text-[10px] font-mono text-slate-600 tracking-widest uppercase">Encryption Active</div>
+    <div class="mt-10 flex justify-between items-center">
+        <select onchange="changeDifficulty(this.value)" class="bg-slate-800 text-slate-300 text-sm font-bold rounded-xl px-5 py-3 border border-slate-700 outline-none hover:bg-slate-700 transition-all cursor-pointer">
+            <option value="beginner">CLASS: BEGINNER</option>
+            <option value="intermediate">CLASS: INTERMEDIATE</option>
+            <option value="expert">CLASS: EXPERT</option>
+        </select>
+        <div class="text-xs font-mono text-slate-500 uppercase tracking-widest">Trace History Active</div>
     </div>
 </div>
 
@@ -200,16 +218,18 @@
 
 <div id="console-overlay">
     <div id="console-box">
-        <div id="console-out">> SYSTEM_OS v4.0.2...<br>> ENCRYPTION_KEY_LINKED<br>> STANDING_BY...</div>
-        <input type="text" id="console-in" placeholder="TYPE_COMMAND_HERE" autofocus>
+        <div id="console-out">> TRACE_KERNEL v5.1.0<br>> READY FOR INPUT...</div>
+        <div class="flex items-center">
+            <span class="text-sky-500 mr-2">></span>
+            <input type="text" id="console-in" autofocus spellcheck="false">
+        </div>
     </div>
 </div>
 
 <script>
     let board, rows, cols, mines, cellsToReveal, gameRunning = false, time = 0, timerInterval;
     let currentDifficulty = 'beginner';
-    let worldSeed = ""; 
-    let moveHistory = ""; 
+    let worldSeed = "", moveHistory = "";
 
     const DEFS = {
         beginner: [9, 9, 10],
@@ -242,24 +262,24 @@
 
         const gb = document.getElementById('game-board');
         gb.innerHTML = '';
-        gb.style.gridTemplateColumns = `repeat(${cols}, 38px)`;
+        gb.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
         
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                cell.id = `cell-${r}-${c}`;
+                cell.id = `c-${r}-${c}`;
                 cell.onmousedown = (e) => {
-                    if (e.button === 0) handleLeftClick(r, c);
-                    if (e.button === 2) handleRightClick(r, c);
+                    if (e.button === 0) handleLeft(r, c);
+                    if (e.button === 2) handleRight(r, c);
                 };
                 gb.appendChild(cell);
             }
         }
-        updateMineCount();
+        updateMineDisplay();
     }
 
-    function handleLeftClick(r, c) {
+    function handleLeft(r, c) {
         if (!gameRunning && time === 0) {
             placeMines(r, c);
             gameRunning = true;
@@ -270,28 +290,25 @@
         }
         if (!gameRunning || board[r][c].isRevealed || board[r][c].state === 1) return;
 
-        // Trace logic: Append Hex coords
+        // Add 2-char hex coordinate to history
         moveHistory += r.toString(16).toUpperCase() + c.toString(16).toUpperCase();
         updateSIDDisplay();
 
-        if (board[r][c].isMine) {
-            return endGame(false, r, c);
-        }
-        
+        if (board[r][c].isMine) return end(false, r, c);
         reveal(r, c);
-        if (cellsToReveal === 0) endGame(true);
+        if (cellsToReveal === 0) end(true);
     }
 
-    function placeMines(rStart, cStart) {
-        let placed = 0;
-        let tSeed = parseInt(worldSeed, 16);
-        while (placed < mines) {
-            const r = Math.floor(seededRandom(tSeed++) * rows);
-            const c = Math.floor(seededRandom(tSeed++) * cols);
-            const isSafe = (Math.abs(r - rStart) <= 1 && Math.abs(c - cStart) <= 1);
+    function placeMines(rS, cS) {
+        let p = 0;
+        let ts = parseInt(worldSeed, 16);
+        while (p < mines) {
+            const r = Math.floor(seededRandom(ts++) * rows);
+            const c = Math.floor(seededRandom(ts++) * cols);
+            const isSafe = (Math.abs(r - rS) <= 1 && Math.abs(c - cS) <= 1);
             if (!board[r][c].isMine && !isSafe) {
                 board[r][c].isMine = true;
-                placed++;
+                p++;
             }
         }
         for(let r=0; r<rows; r++) {
@@ -309,73 +326,71 @@
         }
     }
 
-    function reveal(r, c) {
-        if (r < 0 || r >= rows || c < 0 || c >= cols || board[r][c].isRevealed || board[r][c].state !== 0) return;
-        board[r][c].isRevealed = true;
-        cellsToReveal--;
-        const el = document.getElementById(`cell-${r}-${c}`);
-        el.classList.add('revealed');
-        if (board[r][c].count > 0) {
-            el.textContent = board[r][c].count;
-            el.classList.add(`n-${board[r][c].count}`);
-        } else {
-            for(let dr=-1; dr<=1; dr++) {
-                for(let dc=-1; dc<=1; dc++) reveal(r+dr, c+dc);
+    // Iterative flood fill to prevent stack overflow
+    function reveal(startR, startC) {
+        const queue = [[startR, startC]];
+        while(queue.length > 0) {
+            const [r, c] = queue.shift();
+            if (r < 0 || r >= rows || c < 0 || c >= cols || board[r][c].isRevealed || board[r][c].state !== 0) continue;
+            
+            board[r][c].isRevealed = true;
+            cellsToReveal--;
+            const el = document.getElementById(`c-${r}-${c}`);
+            el.classList.add('revealed');
+            
+            if (board[r][c].count > 0) {
+                el.textContent = board[r][c].count;
+                el.classList.add(`n-${board[r][c].count}`);
+            } else {
+                for(let dr=-1; dr<=1; dr++) {
+                    for(let dc=-1; dc<=1; dc++) queue.push([r+dr, c+dc]);
+                }
             }
         }
     }
 
-    function handleRightClick(r, c) {
+    function handleRight(r, c) {
         if (!gameRunning || board[r][c].isRevealed) return;
-        const el = document.getElementById(`cell-${r}-${c}`);
+        const el = document.getElementById(`c-${r}-${c}`);
         board[r][c].state = (board[r][c].state + 1) % 3;
-        el.className = 'cell' + (board[r][c].state === 1 ? ' flag' : (board[r][c].state === 2 ? ' question' : ''));
-        updateMineCount();
+        el.innerHTML = board[r][c].state === 1 ? '🚩' : (board[r][c].state === 2 ? '?' : '');
+        updateMineDisplay();
     }
 
-    function endGame(won, r, c) {
-        gameRunning = false;
-        clearInterval(timerInterval);
-        
+    function end(won, r, c) {
+        gameRunning = false; clearInterval(timerInterval);
         board.forEach((row, ri) => row.forEach((cell, ci) => {
             if (cell.isMine) {
-                const el = document.getElementById(`cell-${ri}-${ci}`);
+                const el = document.getElementById(`c-${ri}-${ci}`);
                 el.classList.add('revealed', 'mine');
                 el.innerHTML = '●';
-                if (ri === r && ci === c) el.style.background = '#000';
             }
         }));
-
         setTimeout(() => {
-            const overlay = document.getElementById('status-overlay');
-            const title = document.getElementById('status-title');
-            overlay.style.display = 'flex';
-            title.textContent = won ? "MISSION ACCOMPLISHED" : "SYSTEM COMPROMISED";
-            title.className = won ? "text-5xl font-bold mb-6 italic tracking-tighter text-emerald-400" : "text-5xl font-bold mb-6 italic tracking-tighter text-rose-500";
-        }, 600);
+            const over = document.getElementById('status-overlay');
+            over.style.display = 'flex';
+            document.getElementById('status-title').textContent = won ? "VICTORY" : "DEFEAT";
+            document.getElementById('status-title').className = won ? "text-6xl font-black mb-8 italic text-emerald-400" : "text-6xl font-black mb-8 italic text-rose-500";
+        }, 500);
     }
 
-    function updateMineCount() {
+    function updateMineDisplay() {
         let f = 0;
-        board.forEach(row => row.forEach(c => { if(c.state === 1) f++; }));
+        board.forEach(r => r.forEach(c => { if(c.state === 1) f++; }));
         document.getElementById('mine-count').textContent = Math.max(0, mines - f).toString().padStart(3, '0');
     }
 
-    function updateSIDDisplay() {
-        document.getElementById('sid-tag').textContent = worldSeed + moveHistory;
-    }
-
-    function copySID() {
-        navigator.clipboard.writeText(worldSeed + moveHistory);
-        const tag = document.getElementById('sid-tag');
-        const old = tag.textContent;
-        tag.textContent = "COPIED TO CLIPBOARD";
-        setTimeout(() => tag.textContent = old, 1000);
-    }
-
+    function updateSIDDisplay() { document.getElementById('sid-tag').textContent = worldSeed + moveHistory; }
     function changeDifficulty(v) { startGame(v); }
+    function copySID() { 
+        navigator.clipboard.writeText(document.getElementById('sid-tag').textContent);
+        const tag = document.getElementById('sid-tag');
+        const original = tag.textContent;
+        tag.textContent = "COPIED TO CLIPBOARD";
+        setTimeout(() => tag.textContent = original, 1000);
+    }
 
-    // Console
+    // Console Command System
     window.addEventListener('keydown', e => {
         if (e.key === '\\') {
             e.preventDefault();
@@ -387,13 +402,13 @@
 
     document.getElementById('console-in').addEventListener('keydown', e => {
         if (e.key === 'Enter') {
-            const val = e.target.value.trim();
-            if (val === "BiB") window.location.href = "something.html";
-            else {
-                document.getElementById('console-out').innerHTML += `<div>> INVALID_CMD: ${val}</div>`;
-                document.getElementById('console-out').scrollTop = document.getElementById('console-out').scrollHeight;
-            }
+            const cmd = e.target.value.trim();
+            const out = document.getElementById('console-out');
+            if (cmd === "BiB") window.location.href = "something.html";
+            else if (cmd === "clear") out.innerHTML = "> BUFFER_CLEARED";
+            else out.innerHTML += `<div>> ERROR: COMMAND '${cmd}' NOT RECOGNIZED</div>`;
             e.target.value = '';
+            out.scrollTop = out.scrollHeight;
         }
     });
 
