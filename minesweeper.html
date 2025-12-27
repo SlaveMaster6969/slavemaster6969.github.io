@@ -93,9 +93,8 @@
         .flag { color: #3498db; font-size: 1.8rem; }
         .question { color: #f39c12; }
 
-        /* Number Colors */
         .num-1 { color: #1e88e5; } .num-2 { color: #388e3c; } .num-3 { color: #d32f2f; }
-        .num-4 { color: #7b1fa2; } .num-5 { color: #ff9800; }
+        .num-4 { color: #7b1fa2; }
 
         #message {
             margin-top: 15px;
@@ -106,19 +105,16 @@
             line-height: 1.1;
         }
 
-        /* DISCRETE SESSION ID */
-        #session-id-box {
+        /* SUPER TINY DISCRETE ID */
+        #sid-display {
             position: fixed;
             bottom: 5px;
-            right: 8px;
-            font-size: 0.65rem; /* Much smaller */
-            color: rgba(189, 195, 199, 0.3); /* Subtle, low opacity */
-            max-width: 150px;
-            word-break: break-all;
-            user-select: all; /* Allows easy triple-click to copy */
+            right: 5px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.1);
+            user-select: all;
         }
 
-        /* Console Overlay */
         #chat-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.85); display: none;
@@ -143,40 +139,41 @@
 
     <div id="game-container">
         <h1 class="text-3xl font-bold mb-4 text-center">Minesweeper</h1>
-
         <div id="header-panel">
             <div id="mine-count" class="counter">000</div>
             <button id="reset-button" class="text-2xl px-4 py-1 bg-gray-600 rounded hover:bg-gray-700" onclick="startGame(currentDifficulty)">&#x1f604; Reset</button>
             <div id="timer" class="counter">000</div>
         </div>
-
         <div id="game-board" oncontextmenu="return false;"></div>
-
-        <div id="controls" class="mt-4 flex gap-4">
-            <select id="difficulty-select" onchange="changeDifficulty(this.value)" class="bg-blue-600 p-2 rounded text-xl font-bold border-2 border-yellow-500">
+        <div id="controls" class="mt-4">
+            <select id="difficulty-select" onchange="changeDifficulty(this.value)" class="bg-blue-600 p-2 rounded text-xl border-2 border-yellow-500">
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
                 <option value="expert">Expert</option>
             </select>
         </div>
-
         <div id="message">Click a cell to start!</div>
     </div>
 
-    <div id="session-id-box"><span id="sid-value"></span></div>
+    <div id="sid-display"></div>
 
     <div id="chat-container">
         <div id="chat-window">
-            <div id="chat-output">
-                <span class="chat-info">Welcome to the Command Console.</span><br>
-            </div>
-            <input type="text" id="chat-input" placeholder="Type command here..." autofocus>
+            <div id="chat-output"></div>
+            <input type="text" id="chat-input" placeholder="Type command..." autofocus>
         </div>
     </div>
 
     <script>
         let board, rows, cols, mines, cellsToReveal, gameRunning = false, timerInterval, time = 0, currentDifficulty = 'beginner';
+        let currentSeed = 0;
         const DIFFICULTIES = { 'beginner': { r: 9, c: 9, m: 10 }, 'intermediate': { r: 16, c: 16, m: 40 }, 'expert': { r: 16, c: 30, m: 99 } };
+
+        // Deterministic Random (Seeded)
+        function seededRandom(seed) {
+            const x = Math.sin(seed) * 10000;
+            return x - Math.floor(x);
+        }
 
         function startGame(level) {
             clearInterval(timerInterval);
@@ -186,18 +183,25 @@
             rows = config.r; cols = config.c; mines = config.m;
             cellsToReveal = rows * cols - mines;
             
-            document.getElementById('sid-value').textContent = "";
-            document.getElementById('message').textContent = 'Click a cell to start!';
-            document.getElementById('message').style.color = '#f1c40f';
+            // Randomly generate a seed for this match
+            currentSeed = Math.floor(Math.random() * 0xFFFFFFFF);
+            document.getElementById('sid-display').textContent = ""; 
 
             board = Array(rows).fill().map(() => Array(cols).fill().map(() => ({ 
                 isMine: false, isRevealed: false, state: 0, mineCount: 0 
             })));
 
+            renderBoard();
+            updateTimerDisplay();
+            updateMineCountDisplay();
+            document.getElementById('message').textContent = 'Click to start!';
+            document.getElementById('message').style.color = '#f1c40f';
+        }
+
+        function renderBoard() {
             const gb = document.getElementById('game-board');
             gb.innerHTML = '';
             gb.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-            
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const cell = document.createElement('div');
@@ -208,37 +212,28 @@
                     gb.appendChild(cell);
                 }
             }
-            updateTimerDisplay();
-            updateMineCountDisplay();
-        }
-
-        function generateSID() {
-            const minesList = [];
-            board.forEach((row, r) => row.forEach((cell, c) => { if(cell.isMine) minesList.push(`${r},${c}`); }));
-            const sid = btoa(`${rows}|${cols}|${minesList.join(';')}`);
-            document.getElementById('sid-value').textContent = sid;
         }
 
         function handleLeftClick(r, c) {
             if (!gameRunning && time === 0) {
                 placeMines(r, c);
-                generateSID();
+                // Display the Seed ID (Max 8-12 chars)
+                document.getElementById('sid-display').textContent = currentSeed.toString(16).toUpperCase();
                 gameRunning = true;
                 startTimer();
             }
             if (!gameRunning || board[r][c].isRevealed || board[r][c].state === 1) return;
-
             if (board[r][c].isMine) return loseGame(r, c);
-            
             revealCell(r, c);
             if (cellsToReveal === 0) winGame();
         }
 
         function placeMines(rStart, cStart) {
             let placed = 0;
+            let tempSeed = currentSeed;
             while (placed < mines) {
-                const r = Math.floor(Math.random() * rows), c = Math.floor(Math.random() * cols);
-                // Ensure mine is not on or directly adjacent to first click for a fair start
+                const r = Math.floor(seededRandom(tempSeed++) * rows);
+                const c = Math.floor(seededRandom(tempSeed++) * cols);
                 if (!board[r][c].isMine && (Math.abs(r-rStart) > 1 || Math.abs(c-cStart) > 1)) {
                     board[r][c].isMine = true; placed++;
                 }
@@ -258,8 +253,7 @@
 
         function revealCell(r, c) {
             if (r<0 || r>=rows || c<0 || c>=cols || board[r][c].isRevealed || board[r][c].state !== 0) return;
-            board[r][c].isRevealed = true;
-            cellsToReveal--;
+            board[r][c].isRevealed = true; cellsToReveal--;
             const el = document.getElementById(`cell-${r}-${c}`);
             el.classList.add('revealed');
             if (board[r][c].mineCount > 0) {
@@ -281,31 +275,26 @@
 
         function winGame() {
             gameRunning = false; clearInterval(timerInterval);
-            document.getElementById('message').innerHTML = "YOU WIN!<br><span style='font-size:0.7em'>The Secret Command For The Command Prompt is \"BiB\"</span>";
+            document.getElementById('message').innerHTML = "YOU WIN!<br><span style='font-size:0.7em'>The Secret Command For The Command Promt is \"BiB\"</span>";
             document.getElementById('message').style.color = '#2ecc71';
         }
 
-        function loseGame(clickedR, clickedC) {
+        function loseGame(r, c) {
             gameRunning = false; clearInterval(timerInterval);
             document.getElementById('message').textContent = "GAME OVER!";
             document.getElementById('message').style.color = '#e74c3c';
-            
-            board.forEach((row, r) => row.forEach((cell, c) => {
-                const el = document.getElementById(`cell-${r}-${c}`);
+            board.forEach((row, ri) => row.forEach((cell, ci) => {
+                const el = document.getElementById(`cell-${ri}-${ci}`);
                 if (cell.isMine) {
                     el.classList.add('revealed', 'mine');
-                    el.innerHTML = '&#x1f4a3;'; // Bomb Emoji
-                } else if (cell.state === 1) {
-                    el.innerHTML = '&#x2717;'; // X mark for wrong flag
-                }
+                    el.innerHTML = '&#x1f4a3;';
+                } else if (cell.state === 1) el.innerHTML = '&#x2717;';
             }));
-            // Highlight specific bomb that killed you
-            document.getElementById(`cell-${clickedR}-${clickedC}`).style.boxShadow = 'inset 0 0 10px #000';
-            document.getElementById(`cell-${clickedR}-${clickedC}`).style.backgroundColor = '#96281b';
+            document.getElementById(`cell-${r}-${c}`).style.backgroundColor = '#96281b';
         }
 
-        function startTimer() { timerInterval = setInterval(() => { time++; updateTimerDisplay(); }, 1000); }
         function updateTimerDisplay() { document.getElementById('timer').textContent = time.toString().padStart(3, '0'); }
+        function startTimer() { timerInterval = setInterval(() => { time++; updateTimerDisplay(); }, 1000); }
         function updateMineCountDisplay() {
             let flags = 0;
             board.forEach(row => row.forEach(c => { if(c.state === 1) flags++; }));
@@ -313,15 +302,9 @@
         }
         function changeDifficulty(v) { startGame(v); }
 
-        // Console Logic
-        const ci = document.getElementById('chat-input');
-        const cc = document.getElementById('chat-container');
+        const ci = document.getElementById('chat-input'), cc = document.getElementById('chat-container');
         document.addEventListener('keydown', e => {
-            if (e.key === '\\') {
-                e.preventDefault();
-                cc.style.display = 'flex';
-                ci.focus();
-            }
+            if (e.key === '\\') e.preventDefault(), cc.style.display = 'flex', ci.focus();
             if (e.key === 'Escape') cc.style.display = 'none';
         });
 
@@ -330,8 +313,7 @@
                 const val = ci.value.trim();
                 if (val === "BiB") window.location.href = "/something.html";
                 else {
-                    document.getElementById('chat-output').innerHTML += `<span class="chat-error">> Unknown command: ${val}</span><br>`;
-                    document.getElementById('chat-output').scrollTop = document.getElementById('chat-output').scrollHeight;
+                    document.getElementById('chat-output').innerHTML += `<span class="chat-error">> Unknown: ${val}</span><br>`;
                 }
                 ci.value = '';
             }
