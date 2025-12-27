@@ -3,152 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minesweeper Retro</title>
+    <title>Minesweeper Modern</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&display=swap');
         
-        :root {
-            --bg-color: #c0c0c0;
-            --border-light: #ffffff;
-            --border-dark: #808080;
-        }
-
         body {
-            background-color: #2c3e50;
-            font-family: 'VT323', monospace;
+            background-color: #0f172a;
+            font-family: 'Inter', sans-serif;
+            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            overflow: hidden;
         }
 
-        /* The Main Window Frame */
-        #game-window {
-            background-color: var(--bg-color);
-            padding: 6px;
-            border: 3px solid;
-            border-color: var(--border-light) var(--border-dark) var(--border-dark) var(--border-light);
-            box-shadow: 10px 10px 0px rgba(0,0,0,0.3);
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* Inner Panes (Header and Board) */
-        .pane {
-            border: 3px solid;
-            border-color: var(--border-dark) var(--border-light) var(--border-light) var(--border-dark);
-            background-color: var(--bg-color);
-            padding: 8px;
-        }
-
-        #header-panel {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-
-        .lcd-counter {
-            background-color: black;
-            color: #ff0000;
-            font-size: 2.5rem;
-            padding: 2px 6px;
-            border: 2px solid;
-            border-color: var(--border-dark) var(--border-light) var(--border-light) var(--border-dark);
-            min-width: 70px;
-            text-align: right;
-            line-height: 1;
-        }
-
-        #reset-btn {
-            width: 45px;
-            height: 45px;
-            font-size: 1.8rem;
-            background-color: var(--bg-color);
-            border: 3px solid;
-            border-color: var(--border-light) var(--border-dark) var(--border-dark) var(--border-light);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        #reset-btn:active {
-            border-color: var(--border-dark) var(--border-light) var(--border-light) var(--border-dark);
+        .stats-card {
+            background: #1e293b;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid #334155;
         }
 
         #game-board {
             display: grid;
-            gap: 0;
+            gap: 4px;
+            margin-top: 20px;
+            user-select: none;
         }
 
         .cell {
-            width: 30px;
-            height: 30px;
-            border: 3px solid;
-            border-color: var(--border-light) var(--border-dark) var(--border-dark) var(--border-light);
+            width: 36px;
+            height: 36px;
+            background: #334155;
+            border-radius: 6px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.4rem;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 1.1rem;
+        }
+
+        .cell:hover {
+            background: #475569;
+            transform: scale(1.05);
         }
 
         .cell.revealed {
-            border: 1px solid var(--border-dark);
-            background-color: var(--bg-color);
+            background: #1e293b;
+            color: #94a3b8;
             cursor: default;
         }
 
+        .cell.revealed:hover { transform: none; }
+
         /* Number Colors */
-        .n-1 { color: blue; }    .n-2 { color: green; }  .n-3 { color: red; }
-        .n-4 { color: darkblue; }.n-5 { color: maroon; } .n-6 { color: cyan; }
+        .n-1 { color: #38bdf8; } .n-2 { color: #4ade80; } .n-3 { color: #fb7185; }
+        .n-4 { color: #818cf8; } .n-5 { color: #fbbf24; }
 
-        .mine-hit { background-color: red !important; }
-
-        /* Session ID - Ghost Style */
-        #sid-tag {
-            position: fixed;
-            bottom: 5px;
-            right: 5px;
-            font-size: 10px;
-            color: rgba(255,255,255,0.1);
-            user-select: all;
+        .mine { background: #ef4444 !important; box-shadow: 0 0 15px #ef4444; }
+        
+        /* Modal Screens */
+        #overlay {
+            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9);
+            display: none; flex-direction: column; justify-content: center;
+            align-items: center; z-index: 50; border-radius: 16px;
+            animation: fadeIn 0.3s ease;
         }
 
-        /* Console Overlay */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        #sid-tag {
+            position: fixed; bottom: 10px; right: 10px;
+            font-size: 10px; font-family: 'JetBrains Mono'; color: #334155;
+        }
+
+        /* Modern Console */
         #console-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            display: none; justify-content: center; align-items: center; z-index: 100;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            display: none; justify-content: center; padding-top: 10vh; z-index: 100;
         }
         #console-box {
-            background: #111; border: 2px solid #333; width: 400px; padding: 15px;
+            width: 500px; height: 300px; background: #000; border: 1px solid #0ea5e9;
+            border-radius: 8px; padding: 20px; font-family: 'JetBrains Mono';
         }
-        #console-out { color: #0f0; height: 100px; overflow-y: auto; font-size: 14px; margin-bottom: 10px; }
-        #console-in { width: 100%; background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="game-window">
-    <div class="pane mb-2" id="header-panel">
-        <div id="mine-count" class="lcd-counter">000</div>
-        <div id="reset-btn" onclick="startGame(currentDifficulty)">😊</div>
-        <div id="timer" class="lcd-counter">000</div>
+<div class="glass-panel relative">
+    <div id="overlay">
+        <h2 id="overlay-title" class="text-4xl font-bold mb-4"></h2>
+        <button onclick="startGame(currentDifficulty)" class="bg-sky-500 hover:bg-sky-400 px-6 py-2 rounded-full font-bold transition">TRY AGAIN</button>
     </div>
 
-    <div class="pane">
-        <div id="game-board" oncontextmenu="return false;"></div>
+    <div class="flex justify-between items-center gap-8 mb-6">
+        <div class="stats-card">
+            <span class="text-xs text-slate-400 block uppercase">Mines</span>
+            <span id="mine-count" class="text-2xl text-sky-400">000</span>
+        </div>
+        <button onclick="startGame(currentDifficulty)" class="bg-slate-700 hover:bg-slate-600 p-3 rounded-xl transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+        </button>
+        <div class="stats-card text-right">
+            <span class="text-xs text-slate-400 block uppercase">Time</span>
+            <span id="timer" class="text-2xl text-sky-400">000</span>
+        </div>
     </div>
 
-    <div class="mt-4 flex justify-between items-center px-1">
-        <select onchange="changeDifficulty(this.value)" class="bg-gray-200 border-2 border-gray-400 text-sm p-1">
+    <div id="game-board" oncontextmenu="return false;"></div>
+
+    <div class="mt-6 flex justify-between items-center">
+        <select onchange="changeDifficulty(this.value)" class="bg-slate-800 text-sm rounded-lg px-3 py-2 border border-slate-700 outline-none">
             <option value="beginner">Beginner</option>
             <option value="intermediate">Intermediate</option>
             <option value="expert">Expert</option>
         </select>
-        <div id="game-status" class="text-white text-xl uppercase"></div>
+        <span class="text-slate-500 text-xs font-mono">ID READY</span>
     </div>
 </div>
 
@@ -156,8 +141,8 @@
 
 <div id="console-overlay">
     <div id="console-box">
-        <div id="console-out">SYSTEM READY...</div>
-        <input type="text" id="console-in" placeholder="_">
+        <div id="console-out" class="text-sky-500 mb-4 h-48 overflow-auto">> TERMINAL_INIT...</div>
+        <input type="text" id="console-in" class="w-full bg-transparent border-t border-sky-900 pt-2 outline-none text-sky-400" autofocus placeholder="COMMAND_">
     </div>
 </div>
 
@@ -178,8 +163,7 @@
         cellsToReveal = rows * cols - mines;
         currentSeed = Math.floor(Math.random() * 0x7FFFFFFF);
         
-        document.getElementById('reset-btn').textContent = "😊";
-        document.getElementById('game-status').textContent = "";
+        document.getElementById('overlay').style.display = 'none';
         document.getElementById('sid-tag').textContent = "";
         
         board = Array(rows).fill().map(() => Array(cols).fill().map(() => ({ 
@@ -188,13 +172,13 @@
 
         const gb = document.getElementById('game-board');
         gb.innerHTML = '';
-        gb.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+        gb.style.gridTemplateColumns = `repeat(${cols}, 36px)`;
         
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                cell.id = `cell-${r}-${c}`;
+                cell.id = `c-${r}-${c}`;
                 cell.onmousedown = (e) => {
                     if (e.button === 0) handleLeft(r, c);
                     if (e.button === 2) handleRight(r, c);
@@ -214,9 +198,9 @@
             timerInterval = setInterval(() => { time++; updateUI(); }, 1000);
         }
         if (!gameRunning || board[r][c].isRevealed || board[r][c].state === 1) return;
-        if (board[r][c].isMine) return lose(r, c);
+        if (board[r][c].isMine) return finish(false, r, c);
         reveal(r, c);
-        if (cellsToReveal === 0) win();
+        if (cellsToReveal === 0) finish(true);
     }
 
     function placeMines(rS, cS) {
@@ -242,7 +226,7 @@
     function reveal(r, c) {
         if (r<0 || r>=rows || c<0 || c>=cols || board[r][c].isRevealed || board[r][c].state !== 0) return;
         board[r][c].isRevealed = true; cellsToReveal--;
-        const el = document.getElementById(`cell-${r}-${c}`);
+        const el = document.getElementById(`c-${r}-${c}`);
         el.classList.add('revealed');
         if (board[r][c].count > 0) {
             el.textContent = board[r][c].count;
@@ -255,33 +239,33 @@
     function handleRight(r, c) {
         if (!gameRunning || board[r][c].isRevealed) return;
         board[r][c].state = (board[r][c].state + 1) % 3;
-        const el = document.getElementById(`cell-${r}-${c}`);
+        const el = document.getElementById(`c-${r}-${c}`);
         el.innerHTML = board[r][c].state === 1 ? '🚩' : (board[r][c].state === 2 ? '?' : '');
         updateUI();
     }
 
-    function win() {
+    function finish(won, r, c) {
         gameRunning = false; clearInterval(timerInterval);
-        document.getElementById('reset-btn').textContent = "😎";
-        document.getElementById('game-status').textContent = "You Win!";
-    }
-
-    function lose(r, c) {
-        gameRunning = false; clearInterval(timerInterval);
-        document.getElementById('reset-btn').textContent = "😵";
-        board.forEach((row, ri) => row.forEach((cell, ci) => {
-            const el = document.getElementById(`cell-${ri}-${ci}`);
-            if (cell.isMine) {
-                el.classList.add('revealed');
-                el.innerHTML = '💣';
-                if (ri === r && ci === c) el.classList.add('mine-hit');
-            } else if (cell.state === 1) el.innerHTML = '❌';
-        }));
+        if (!won) {
+            board.forEach((row, ri) => row.forEach((cell, ci) => {
+                const el = document.getElementById(`c-${ri}-${ci}`);
+                if (cell.isMine) {
+                    el.classList.add('revealed', 'mine');
+                    el.innerHTML = '●';
+                }
+            }));
+        }
+        setTimeout(() => {
+            const over = document.getElementById('overlay');
+            over.style.display = 'flex';
+            document.getElementById('overlay-title').textContent = won ? "VICTORY" : "GAME OVER";
+            document.getElementById('overlay-title').className = won ? "text-4xl font-bold mb-4 text-emerald-400" : "text-4xl font-bold mb-4 text-rose-500";
+        }, 500);
     }
 
     function updateUI() {
-        let flags = 0; board.forEach(r => r.forEach(c => { if(c.state === 1) flags++; }));
-        document.getElementById('mine-count').textContent = Math.max(0, mines - flags).toString().padStart(3, '0');
+        let f = 0; board.forEach(r => r.forEach(c => { if(c.state === 1) f++; }));
+        document.getElementById('mine-count').textContent = Math.max(0, mines - f).toString().padStart(3, '0');
         document.getElementById('timer').textContent = Math.min(999, time).toString().padStart(3, '0');
     }
 
@@ -294,8 +278,7 @@
 
     document.getElementById('console-in').addEventListener('keydown', e => {
         if (e.key === 'Enter') {
-            const val = e.target.value;
-            if (val === "BiB") window.location.href = "something.html";
+            if (e.target.value === "BiB") window.location.href = "something.html";
             e.target.value = '';
         }
     });
