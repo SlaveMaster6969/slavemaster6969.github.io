@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Report - Imagine Edgenuity</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            color: #333;
+        }
+        .header {
+            background-color: #fff;
+            padding: 15px 30px;
+            border-bottom: 2px solid #002e6d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand { color: #002e6d; font-weight: bold; font-size: 20px; }
+        .main-container { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            background-color: #fff;
+            border-right: 1px solid #ddd;
+        }
+        .sidebar ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar li {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .sidebar li.active {
+            background-color: #dcdcdc;
+            font-weight: bold;
+        }
+
+        /* Content Area */
+        .content { flex-grow: 1; padding: 30px; }
+        h1 { font-weight: normal; margin-bottom: 25px; color: #555; }
+        
+        .filter-section {
+            background: #fff;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-view { background: #777; color: white; }
+        .btn-download { background: #1a5e8a; color: white; }
+
+        /* Report Table */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+        .report-table th {
+            background: #f8f8f8;
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #ddd;
+            font-size: 13px;
+        }
+        .report-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .week-row { background-color: #d9d9d9; font-weight: bold; }
+        .day-row { background-color: #f2f2f2; font-weight: bold; }
+        .indent-1 { padding-left: 30px; }
+        .indent-2 { padding-left: 50px; color: #666; font-style: italic; }
+        .text-right { text-align: right; }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="brand">imagine edgenuity</div>
+    <div class="user-icon">CF</div>
+</header>
+
+<div class="main-container">
+    <nav class="sidebar">
+        <ul>
+            <li>Student Information</li>
+            <li>Reporting</li>
+            <li class="active">Attendance Report</li>
+            <li>EdgeEX Attendance Report</li>
+        </ul>
+    </nav>
+
+    <main class="content">
+        <h1>Christopher Fedrick's Profile</h1>
+
+        <div class="filter-section">
+            <strong>ATTENDANCE REPORT</strong>
+            <span>From: <input type="text" value="12/21/2025"></span>
+            <span>To: <input type="text" value="01/02/2026"></span>
+            <button class="btn btn-view">View</button>
+            <button class="btn btn-download">Attendance Report</button>
+        </div>
+
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>SESSION</th>
+                    <th>TIME (HH:MM:SS)</th>
+                    <th>ACTIVITIES COMPLETED</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="week-row">
+                    <td>WEEK 1: 12/21/2025-12/27/2025</td>
+                    <td>27:43:50</td>
+                    <td>14</td>
+                </tr>
+                <tr class="day-row">
+                    <td>Sunday 12/21/2025</td>
+                    <td>09:37:14</td>
+                    <td>2</td>
+                </tr>
+                <tr>
+                    <td class="indent-1"><strong>10:57 AM-12:09 PM</strong></td>
+                    <td><strong>01:11:55</strong></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="indent-1">SA FL-2100010-M/J United States History S2 25-26</td>
+                    <td>00:36:39</td>
+                    <td>0</td>
+                </tr>
+                <tr>
+                    <td class="indent-2">Idle Time</td>
+                    <td>00:35:16</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="indent-1"><strong>12:30 PM-12:39 PM</strong></td>
+                    <td><strong>00:08:39</strong></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="indent-2">Idle Time</td>
+                    <td>00:08:39</td>
+                    <td></td>
+                </tr>
+                </tbody>
+        </table>
+    </main>
+</div>
+
+</body>
+</html>
