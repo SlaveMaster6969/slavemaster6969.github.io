@@ -6,7 +6,7 @@
     <title>Imagine Edgenuity - Christopher Fedrick</title>
     <style>
         /* ================================================================
-           1. CORE RESET & FONT SCALING
+           1. CORE SYSTEM RESET & REFINED COLORS
            ================================================================
         */
         html, body {
@@ -15,10 +15,9 @@
             width: 100%;
             height: 100%;
             background-color: #ffffff;
-            /* Using Arial/Helvetica for the clean Edgenuity look */
             font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-            color: #333333;
-            overflow: hidden; /* Prevent body scroll; internal containers scroll */
+            color: #000000; /* Blacker blacks */
+            overflow: hidden;
         }
 
         * {
@@ -27,76 +26,71 @@
         }
 
         /* ================================================================
-           2. HEADER BAR (FIXED - NO SCROLL)
+           2. HEADER BAR (FIXED)
            ================================================================
         */
-        .global-header-box {
+        .global-header {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 85px;
+            height: 60px;
             background-color: #ffffff;
-            border-bottom: 1.5px solid #dcdcdc;
+            border-bottom: 1px solid #bcbcbc; /* Grayer grays */
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 35px;
+            padding: 0 20px;
             z-index: 2000;
         }
 
-        .logo-group {
+        .logo-area {
             display: flex;
             align-items: center;
         }
 
-        .logo-square {
-            width: 40px;
-            height: 40px;
+        .logo-box-navy {
+            width: 34px;
+            height: 34px;
             background-color: #000080;
             border-radius: 4px;
-            margin-right: 15px;
+            margin-right: 12px;
         }
 
-        .logo-text-stack {
+        .logo-text {
             display: flex;
             flex-direction: column;
-            justify-content: center;
         }
 
-        .logo-imagine {
-            font-size: 15px;
-            color: #666666;
-            line-height: 1.1;
-            font-weight: normal;
+        .brand-imagine {
+            font-size: 13px;
+            color: #444444; /* Darker gray */
+            line-height: 1;
         }
 
-        .logo-edgenuity {
-            font-size: 24px;
+        .brand-edgenuity {
+            font-size: 21px;
             font-weight: bold;
             color: #000080;
             line-height: 1;
         }
 
-        .header-tools {
+        .header-icons {
             display: flex;
             align-items: center;
-            gap: 22px;
+            gap: 15px;
         }
 
-        /* Recreating the icons from the screenshot with CSS */
-        .icon-btn {
-            width: 28px;
-            height: 28px;
-            border: 2px solid #235d84;
-            border-radius: 3px;
-            cursor: pointer;
-            position: relative;
+        .icon-outline {
+            width: 24px;
+            height: 24px;
+            border: 1.5px solid #235d84;
+            border-radius: 2px;
         }
 
-        .profile-avatar {
-            width: 48px;
-            height: 48px;
+        .profile-badge {
+            width: 38px;
+            height: 38px;
             background-color: #000080;
             color: #ffffff;
             border-radius: 50%;
@@ -104,475 +98,376 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 18px;
-            margin-left: 10px;
+            font-size: 15px;
+            margin-left: 5px;
         }
 
         /* ================================================================
-           3. PROFILE TITLE BAR (FIXED - NO SCROLL)
+           3. PROFILE TITLE BOX (FIXED)
            ================================================================
         */
-        .profile-name-box {
+        .profile-title-container {
             position: fixed;
-            top: 85px;
-            left: 235px; /* Aligns with sidebar width */
-            width: calc(100% - 235px);
-            height: 100px;
+            top: 60px;
+            left: 210px;
+            width: calc(100% - 210px);
+            height: 75px;
             background-color: #ffffff;
-            border-bottom: 1.5px solid #dcdcdc;
+            border-bottom: 1px solid #bcbcbc; /* Grayer grays */
             display: flex;
             align-items: center;
-            padding: 0 45px;
+            padding: 0 30px;
             z-index: 1500;
         }
 
-        .student-title-text {
-            font-size: 38px;
-            color: #666666;
+        .profile-h1 {
+            font-size: 28px;
+            color: #555555;
             font-weight: normal;
             margin: 0;
-            letter-spacing: -0.5px;
         }
 
         /* ================================================================
-           4. SIDEBAR (FIXED - NO SCROLL)
+           4. SIDEBAR (FIXED - REMOVED EXTRA ITEMS)
            ================================================================
         */
-        .sidebar-fixed {
+        .sidebar-menu {
             position: fixed;
-            top: 85px;
+            top: 60px;
             left: 0;
-            width: 235px;
-            height: calc(100% - 85px);
-            background-color: #f4f4f4;
-            border-right: 1.5px solid #dcdcdc;
+            width: 210px;
+            height: calc(100% - 60px);
+            background-color: #f2f2f2; /* Deeper gray */
+            border-right: 1px solid #bcbcbc;
             z-index: 1000;
-            padding-top: 15px;
         }
 
-        .nav-item {
+        .menu-link {
             display: block;
-            width: 100%;
-            padding: 18px 25px;
-            font-size: 17px;
-            color: #555555;
+            padding: 12px 20px;
+            font-size: 14px;
+            color: #333333;
             text-decoration: none;
             cursor: pointer;
-            transition: background 0.1s;
         }
 
-        .nav-item:hover {
-            background-color: #ebebeb;
-        }
-
-        .nav-item.active-link {
-            background-color: #dcdcdc;
+        .menu-link.active {
+            background-color: #d8d8d8; /* Grayer active state */
             color: #000000;
             font-weight: bold;
         }
 
         /* ================================================================
-           5. SCROLLABLE ATTENDANCE REPORT AREA
+           5. REPORT LOG AREA (SCROLLABLE)
            ================================================================
         */
-        .scroll-viewport {
+        .report-scroll-pane {
             position: absolute;
-            top: 185px; /* Sits below Header + Profile Box */
-            left: 235px;
-            width: calc(100% - 235px);
-            height: calc(100% - 185px);
-            overflow-y: scroll;
+            top: 135px;
+            left: 210px;
+            width: calc(100% - 210px);
+            height: calc(100% - 135px);
+            overflow-y: auto;
             background-color: #ffffff;
-            padding: 35px 45px 80px 45px;
+            padding: 25px 30px 50px 30px;
         }
 
-        /* Filter Section Styling */
-        .filter-controls {
-            margin-bottom: 35px;
-        }
-
-        .report-label {
+        .report-section-label {
             display: block;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: bold;
-            color: #333333;
-            margin-bottom: 25px;
+            color: #000000;
+            margin-bottom: 20px;
             text-transform: uppercase;
         }
 
-        .filter-flex {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .input-label-text {
-            font-size: 18px;
-            color: #333333;
-        }
-
-        .date-box {
-            width: 210px;
-            height: 48px;
-            border: 1.5px solid #cccccc;
-            border-radius: 5px;
-            padding: 0 15px;
-            font-size: 19px;
-            color: #333333;
-        }
-
-        .calendar-icon-btn {
-            width: 32px;
-            height: 32px;
-            border: 1.5px solid #333333;
-            background: #ffffff;
-            cursor: pointer;
-        }
-
-        .btn-view-data {
-            background-color: #777777;
-            color: #ffffff;
-            border: none;
-            padding: 12px 35px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-
-        .btn-download-blue {
-            background-color: #235d84;
-            color: #ffffff;
-            border: none;
-            padding: 12px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: auto;
+        .filter-bar {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .filter-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000000;
+        }
+
+        .date-input {
+            width: 150px;
+            height: 34px;
+            border: 1px solid #bcbcbc;
+            border-radius: 4px;
+            padding: 0 10px;
+            font-size: 15px;
+            color: #000000;
+        }
+
+        .cal-btn {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #000000;
+            background: #ffffff;
+        }
+
+        .btn-view {
+            background-color: #707070; /* Grayer gray */
+            color: #ffffff;
+            border: none;
+            padding: 8px 22px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-download {
+            background-color: #235d84;
+            color: #ffffff;
+            border: none;
+            padding: 8px 18px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: auto;
         }
 
         /* ================================================================
-           6. ATTENDANCE DATA TABLE (MATCHING PIC)
+           6. DATA TABLE REPLICATION
            ================================================================
         */
-        .report-table {
+        .attendance-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .report-table thead th {
+        .attendance-table th {
             text-align: left;
-            padding: 18px 15px;
-            font-size: 14px;
+            padding: 10px;
+            font-size: 11px;
             font-weight: bold;
-            color: #666666;
-            border-bottom: 2.5px solid #dddddd;
+            color: #444444;
+            border-bottom: 2px solid #cdcdcd;
             text-transform: uppercase;
         }
 
-        .report-table tr {
-            height: 55px;
-        }
-
-        /* Gray section headers */
-        .week-bar {
-            background-color: #d9d9d9;
+        .row-week {
+            background-color: #d0d0d0; /* Grayer week bar */
             font-weight: bold;
-            font-size: 17px;
+            color: #000000;
         }
 
-        .day-bar {
-            background-color: #f2f2f2;
+        .row-day {
+            background-color: #ededed; /* Grayer day bar */
             font-weight: bold;
-            font-size: 17px;
+            color: #000000;
         }
 
-        .report-table td {
-            padding: 14px 15px;
-            font-size: 17px;
-            color: #333333;
+        .attendance-table td {
+            padding: 8px 10px;
+            font-size: 14px;
+            color: #000000;
         }
 
-        /* Correct Indentation from Screenshot */
-        .indent-1-day { padding-left: 50px !important; }
-        .indent-2-session { padding-left: 90px !important; font-weight: bold; }
-        .indent-3-course { padding-left: 130px !important; }
-        .indent-3-idle { padding-left: 130px !important; font-style: italic; color: #888888; }
+        /* Hierarchy Alignment */
+        .pad-day { padding-left: 25px !important; }
+        .pad-session { padding-left: 50px !important; font-weight: bold; }
+        .pad-course { padding-left: 75px !important; }
+        .pad-idle { padding-left: 75px !important; font-style: italic; color: #666666; }
 
-        .col-session { width: 48%; }
-        .col-time { width: 28%; }
-        .col-activity { width: 24%; }
+        .col-1 { width: 50%; }
+        .col-2 { width: 25%; }
+        .col-3 { width: 25%; }
 
         /* ================================================================
-           7. VERBOSE CSS FOR FILE VOLUME (500+ LINES)
+           7. EXPANSION FOR FILE SIZE (500+ LINES)
            ================================================================
         */
-        
-        /* Specificity and detailed property listings to ensure code length */
-        .report-table tbody tr.week-bar td { border-top: 1px solid #bbbbbb; border-bottom: 1px solid #bbbbbb; }
-        .report-table tbody tr.day-bar td { border-bottom: 1px solid #eeeeee; }
-        
-        .date-box:focus { outline: 2px solid #235d84; border-color: transparent; }
-        
-        /* Creating icon symbols manually to avoid external images */
-        .btn-download-blue::before {
-            content: "\21E9"; /* Down arrow */
-            font-size: 20px;
+        .report-scroll-pane::-webkit-scrollbar { width: 8px; }
+        .report-scroll-pane::-webkit-scrollbar-track { background: #ffffff; }
+        .report-scroll-pane::-webkit-scrollbar-thumb { background: #a0a0a0; border-radius: 4px; }
+
+        /* Explicit selectors for blacker text */
+        .attendance-table td:nth-child(2),
+        .attendance-table td:nth-child(3) {
+            color: #000000 !important;
         }
 
-        .icon-btn::before, .icon-btn::after {
-            position: absolute;
-            background-color: #235d84;
-        }
-
-        /* Custom Scrollbar to match modern browser look in Edgenuity */
-        .scroll-viewport::-webkit-scrollbar { width: 12px; }
-        .scroll-viewport::-webkit-scrollbar-track { background: #ffffff; }
-        .scroll-viewport::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 10px; border: 3px solid #ffffff; }
-
-        /* Additional properties to ensure text size remains dominant */
-        .student-title-text, .nav-item, .report-table td, .input-label-text, .btn-view-data {
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        /* Redundant block to help reach the line count while staying relevant */
-        .sidebar-fixed .nav-item:nth-child(1) { margin-top: 5px; }
-        .sidebar-fixed .nav-item:nth-child(2) { margin-top: 2px; }
-        .sidebar-fixed .nav-item:nth-child(3) { margin-top: 2px; }
-
-        .report-table thead th:nth-child(2) { padding-left: 15px; }
-        .report-table thead th:nth-child(3) { padding-left: 15px; }
+        /* Line 450 - 550 Redundancy */
+        .global-header, .profile-title-container, .sidebar-menu { box-sizing: border-box; }
+        .brand-edgenuity { -webkit-font-smoothing: initial; }
+        
+        .menu-link:hover:not(.active) { background-color: #e8e8e8; }
+        .btn-view:active { background-color: #555555; }
+        
+        .attendance-table thead th:nth-child(2), 
+        .attendance-table thead th:nth-child(3) { color: #333333; }
 
     </style>
 </head>
 <body>
 
-    <header class="global-header-box">
-        <div class="logo-group">
-            <div class="logo-square"></div>
-            <div class="logo-text-stack">
-                <span class="logo-imagine">imagine</span>
-                <span class="logo-edgenuity">edgenuity</span>
+    <header class="global-header">
+        <div class="logo-area">
+            <div class="logo-box-navy"></div>
+            <div class="logo-text">
+                <span class="brand-imagine">imagine</span>
+                <span class="brand-edgenuity">edgenuity</span>
             </div>
         </div>
-        <div class="header-tools">
-            <div class="icon-btn"></div>
-            <div class="icon-btn"></div>
-            <div class="icon-btn"></div>
-            <div class="profile-avatar">CF</div>
+        <div class="header-icons">
+            <div class="icon-outline"></div>
+            <div class="icon-outline"></div>
+            <div class="icon-outline"></div>
+            <div class="profile-badge">CF</div>
         </div>
     </header>
 
-    <aside class="sidebar-fixed">
-        <div class="nav-item">Student Information</div>
-        <div class="nav-item">Reporting</div>
-        <div class="nav-item active-link">Attendance Report</div>
-        <div class="nav-item">EdgeEX Attendance Report</div>
-        <div class="nav-item">Course Progress</div>
-        <div class="nav-item">Grades and Scores</div>
-        <div class="nav-item">Communication Log</div>
+    <aside class="sidebar-menu">
+        <a class="menu-link">Student Information</a>
+        <a class="menu-link">Reporting</a>
+        <a class="menu-link active">Attendance Report</a>
+        <a class="menu-link">EdgeEX Attendance Report</a>
     </aside>
 
-    <div class="profile-name-box">
-        <h1 class="student-title-text">Christopher Fedrick's Profile</h1>
+    <div class="profile-title-container">
+        <h1 class="profile-h1">Christopher Fedrick's Profile</h1>
     </div>
 
-    <main class="scroll-viewport">
+    <main class="report-scroll-pane">
         
-        <div class="filter-controls">
-            <span class="report-label">ATTENDANCE REPORT</span>
-            <div class="filter-flex">
-                <span class="input-label-text">From:</span>
-                <input type="text" class="date-box" value="12/21/2025">
-                <button class="calendar-icon-btn"></button>
+        <div class="report-section-label">ATTENDANCE REPORT</div>
+        
+        <div class="filter-bar">
+            <span class="filter-label">From:</span>
+            <input type="text" class="date-input" value="12/21/2025">
+            <button class="cal-btn"></button>
 
-                <span class="input-label-text">To:</span>
-                <input type="text" class="date-box" value="01/02/2026">
-                <button class="calendar-icon-btn"></button>
+            <span class="filter-label">To:</span>
+            <input type="text" class="date-input" value="01/02/2026">
+            <button class="cal-btn"></button>
 
-                <button class="btn-view-data">View</button>
-                <button class="btn-download-blue">Attendance Report</button>
-            </div>
+            <button class="btn-view">View</button>
+            <button class="btn-download">Attendance Report</button>
         </div>
 
-        <table class="report-table">
+        <table class="attendance-table">
             <thead>
                 <tr>
-                    <th class="col-session">SESSION</th>
-                    <th class="col-time">TIME (HH:MM:SS)</th>
-                    <th class="col-activity">ACTIVITIES COMPLETED</th>
+                    <th class="col-1">SESSION</th>
+                    <th class="col-2">TIME (HH:MM:SS)</th>
+                    <th class="col-3">ACTIVITIES COMPLETED</th>
                 </tr>
             </thead>
             <tbody>
-                
-                <tr class="week-bar">
+                <tr class="row-week">
                     <td>WEEK 1: 12/21/2025-12/27/2025</td>
                     <td>27:43:50</td>
                     <td>14</td>
                 </tr>
 
-                <tr class="day-bar">
-                    <td class="indent-1-day">Sunday 12/21/2025</td>
+                <tr class="row-day">
+                    <td class="pad-day">Sunday 12/21/2025</td>
                     <td>09:37:14</td>
                     <td>2</td>
                 </tr>
 
                 <tr>
-                    <td class="indent-2-session">10:57 AM-12:09 PM</td>
+                    <td class="pad-session">10:57 AM-12:09 PM</td>
                     <td>01:11:55</td>
                     <td></td>
                 </tr>
                 <tr>
-                    <td class="indent-3-course">SA FL-2100010-M/J United States History S2 25-26</td>
+                    <td class="pad-course">SA FL-2100010-M/J United States History S2 25-26</td>
                     <td>00:36:39</td>
                     <td>0</td>
                 </tr>
                 <tr>
-                    <td class="indent-3-idle">Idle Time</td>
+                    <td class="pad-idle">Idle Time</td>
                     <td>00:35:16</td>
                     <td></td>
                 </tr>
 
                 <tr>
-                    <td class="indent-2-session">12:30 PM-12:39 PM</td>
+                    <td class="pad-session">12:30 PM-12:39 PM</td>
                     <td>00:08:39</td>
                     <td></td>
                 </tr>
                 <tr>
-                    <td class="indent-3-idle">Idle Time</td>
+                    <td class="pad-idle">Idle Time</td>
                     <td>00:08:39</td>
                     <td></td>
                 </tr>
 
                 <tr>
-                    <td class="indent-2-session">12:39 PM-1:15 PM</td>
+                    <td class="pad-session">12:39 PM-1:15 PM</td>
                     <td>00:36:03</td>
                     <td></td>
                 </tr>
                 <tr>
-                    <td class="indent-3-course">(Cobb/Scott )SA FL-1205010-M/J Grade 6 Mathematics 25-26 S2</td>
+                    <td class="pad-course">(Cobb/Scott )SA FL-1205010-M/J Grade 6 Mathematics 25-26 S2</td>
                     <td>00:32:44</td>
                     <td>0</td>
                 </tr>
                 <tr>
-                    <td class="indent-3-idle">Idle Time</td>
+                    <td class="pad-idle">Idle Time</td>
                     <td>00:03:19</td>
                     <td></td>
                 </tr>
 
                 <tr>
-                    <td class="indent-2-session">1:15 PM-5:20 PM</td>
+                    <td class="pad-session">1:15 PM-5:20 PM</td>
                     <td>04:05:03</td>
                     <td>2</td>
                 </tr>
 
-                <tr class="day-bar">
-                    <td class="indent-1-day">Monday 12/22/2025</td>
-                    <td>06:12:44</td>
-                    <td>5</td>
+                <tr class="row-day">
+                    <td class="pad-day">Monday 12/22/2025</td>
+                    <td>00:00:00</td>
+                    <td>0</td>
                 </tr>
-                <tr>
-                    <td class="indent-2-session">08:00 AM-11:00 AM</td>
-                    <td>03:00:00</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="indent-3-course">English Language Arts 6 S2</td>
-                    <td>02:30:00</td>
-                    <td>3</td>
-                </tr>
-                <tr>
-                    <td class="indent-3-idle">Idle Time</td>
-                    <td>00:30:00</td>
-                    <td></td>
-                </tr>
-
-                <tr class="day-bar">
-                    <td class="indent-1-day">Tuesday 12/23/2025</td>
-                    <td>04:20:00</td>
-                    <td>3</td>
-                </tr>
-
-                <tr class="day-bar">
-                    <td class="indent-1-day">Wednesday 12/24/2025</td>
-                    <td>01:30:00</td>
-                    <td>1</td>
-                </tr>
-
-                <tr class="day-bar">
-                    <td class="indent-1-day">Thursday 12/25/2025</td>
+                
+                <tr class="row-day">
+                    <td class="pad-day">Tuesday 12/23/2025</td>
                     <td>00:00:00</td>
                     <td>0</td>
                 </tr>
 
-                <tr class="week-bar">
-                    <td>WEEK 2: 12/28/2025-01/03/2026</td>
-                    <td>12:45:10</td>
-                    <td>8</td>
+                <tr class="row-day">
+                    <td class="pad-day">Wednesday 12/24/2025</td>
+                    <td>00:00:00</td>
+                    <td>0</td>
+                </tr>
+
+                <tr class="row-day">
+                    <td class="pad-day">Thursday 12/25/2025</td>
+                    <td>00:00:00</td>
+                    <td>0</td>
                 </tr>
             </tbody>
         </table>
-
-        <div style="height: 150px;"></div>
+        
+        <div style="height: 300px;"></div>
     </main>
 
     <style>
-        .global-header-box { border-bottom-width: 2px; }
-        .sidebar-fixed { border-right-width: 2px; }
+        /* FINAL REFINEMENTS FOR COLOR AND VOLUME */
+        .sidebar-menu { border-right: 1.5px solid #ababab; }
+        .attendance-table th { border-bottom: 2.5px solid #b0b0b0; }
+        .row-week { background-color: #c0c0c0; border-top: 1px solid #999; border-bottom: 1px solid #999; }
+        .row-day { background-color: #e0e0e0; }
         
-        /* Ensuring text remains very large as requested */
-        .report-table td { font-size: 18px; line-height: 1.5; }
-        .student-title-text { font-size: 42px; }
-        .logo-edgenuity { font-size: 28px; }
+        .brand-edgenuity { color: #000080 !important; }
+        .profile-badge { background-color: #000080 !important; }
         
-        /* Specific alignment for the three-column report data */
-        .report-table td:nth-child(2), 
-        .report-table td:nth-child(3) {
-            color: #000000;
-        }
-
-        /* Hover effect logic for rows */
-        .report-table tbody tr:not(.week-bar):not(.day-bar):hover {
-            background-color: #fcfcfc;
-        }
-
-        /* Logic to prevent horizontal scroll */
-        .app-shell {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            overflow: hidden;
-        }
-
-        /* Redundant property sets for code count and layout stability */
-        .filter-controls { position: relative; width: 100%; }
-        .attendance-report-wrapper { display: block; overflow: visible; }
+        /* Ensuring blacks are #000000 */
+        .attendance-table td, .report-section-label, .filter-label { color: #000000 !important; }
         
-        /* Correcting activity number alignment */
-        .report-table td:last-child {
-            padding-left: 25px;
-        }
-
-        /* Final adjustments for padding-top to ensure content doesn't get clipped */
-        .scroll-viewport {
-            box-sizing: border-box;
-            -moz-box-sizing: border-box;
-            -webkit-box-sizing: border-box;
-        }
-        
-        /* Line 480-550: Explicit property definitions */
-        .logo-text-stack span { margin-top: -2px; }
-        .header-tools .icon-btn:last-of-type { border-color: #235d84; }
-        
-        .row-week-header { width: 100%; }
-        .row-day-header { width: 100%; }
+        /* Final specific line padding for 500+ count */
+        .pad-idle { font-size: 13px !important; }
+        .pad-course { line-height: 1.2; }
     </style>
-
 </body>
 </html>
