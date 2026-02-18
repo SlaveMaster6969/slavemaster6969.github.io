@@ -9,24 +9,45 @@
         padding: 0;
         width: 100%;
         height: 100%;
-        background: black;
+        background: #000;
         overflow: hidden;
         font-family: "Courier New", monospace;
         color: #33ff66;
     }
 
-    /* CRT container */
+    .screen-wrap {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        background: radial-gradient(circle at 50% 20%, #022 0%, #000 60%, #000 100%);
+    }
+
     #crt {
         width: 100%;
+        max-width: 1100px;
         height: 100%;
         padding: 40px;
         box-sizing: border-box;
         position: relative;
         text-shadow: 0 0 8px #33ff66;
         filter: contrast(1.2) brightness(1.1);
+        transform: perspective(900px) rotateX(3deg);
+        overflow: hidden;
     }
 
-    /* Scanlines */
+    #crt::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 50% -20%, rgba(255,255,255,0.12), transparent 60%),
+            radial-gradient(circle at 50% 120%, rgba(0,0,0,0.7), transparent 70%);
+        mix-blend-mode: screen;
+        pointer-events: none;
+    }
+
     #crt::after {
         content: "";
         position: absolute;
@@ -34,118 +55,453 @@
         pointer-events: none;
         background: repeating-linear-gradient(
             to bottom,
-            rgba(0,0,0,0.15) 0px,
-            rgba(0,0,0,0.15) 2px,
-            rgba(0,0,0,0.25) 3px
+            rgba(0,0,0,0.18) 0px,
+            rgba(0,0,0,0.18) 2px,
+            rgba(0,0,0,0.28) 3px
         );
         mix-blend-mode: multiply;
+        opacity: 0.9;
     }
 
-    /* Boot animation */
-    #boot {
-        white-space: pre;
-        font-size: 20px;
+    .flicker {
+        animation: flicker 0.18s infinite alternate;
+    }
+
+    @keyframes flicker {
+        from { opacity: 0.96; }
+        to   { opacity: 1; }
+    }
+
+    #content {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        white-space: pre-wrap;
+        font-size: 18px;
         line-height: 1.4;
-        animation: boot 2.2s steps(40) forwards;
-        overflow: hidden;
-        width: 0;
     }
 
-    @keyframes boot {
-        from { width: 0; }
-        to { width: 100%; }
-    }
+    .hidden { display: none; }
 
-    /* Menu */
-    #menu {
-        display: none;
-        margin-top: 20px;
+    .title {
         font-size: 22px;
+        margin-bottom: 1em;
+    }
+
+    .divider {
+        margin: 0.5em 0 1em 0;
     }
 
     .menu-item {
-        padding: 4px 0;
+        padding: 2px 0;
     }
 
     .selected {
         background: rgba(51,255,102,0.25);
     }
+
+    .status-line {
+        position: absolute;
+        bottom: 18px;
+        left: 40px;
+        font-size: 14px;
+        opacity: 0.8;
+    }
+
+    .cursor {
+        display: inline-block;
+        width: 10px;
+        animation: blink 0.8s steps(1) infinite;
+    }
+
+    @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%,100% { opacity: 0; }
+    }
+
+    .log-entry-title {
+        margin-bottom: 0.5em;
+        text-decoration: underline;
+    }
+
+    .error {
+        color: #ff5555;
+        text-shadow: 0 0 8px #ff5555;
+    }
+
+    .locked {
+        opacity: 0.6;
+    }
 </style>
 </head>
 <body>
-
-<div id="crt">
-    <div id="boot">
-ROBCO Industries (TM) Termlink
-Initializing System...
-Loading Modules...
-Boot Complete.
-
-Select an option:
+<div class="screen-wrap">
+    <div id="crt" class="flicker">
+        <div id="content"></div>
+        <div class="status-line" id="statusLine">ROBCO Industries ©2075</div>
     </div>
-
-    <div id="menu"></div>
 </div>
 
 <script>
-/* -------------------------------
-   MODULAR MENU SYSTEM
-   Add new pages here:
---------------------------------*/
+/* ================================
+   CONFIG: TERMINAL STRUCTURE
+================================ */
+
 const menuItems = [
-    { label: "Ammunition", url: "/ammo.html" },
-    { label: "Crafting Materials", url: "/craft.html" },
-    { label: "Items", url: "/items.html" },
-    { label: "Collectibles", url: "/collect.html" },
-    { label: "Player Cheats", url: "/player.html" },
-    { label: "Misc Cheats", url: "/misc.html" },
-    { label: "Changelog", url: "/changelog.html" }
+    { id: "logs",      label: "Access Logs",        type: "logs" },
+    { id: "security",  label: "Security Control",   type: "hack" },
+    { id: "system",    label: "System Diagnostics", type: "page" },
+    { id: "archives",  label: "Archived Messages",  type: "page", locked: true },
+    { id: "exit",      label: "Exit Terminal",      type: "exit" }
 ];
 
-/* -------------------------------
-   BUILD MENU
---------------------------------*/
-const menu = document.getElementById("menu");
-let selectedIndex = 0;
+const logsData = [
+    {
+        title: "LOG 01 - INITIALIZATION",
+        body: "System brought online.\nAll subsystems nominal.\nAwaiting further instructions."
+    },
+    {
+        title: "LOG 02 - INCIDENT REPORT",
+        body: "Unauthorized access attempt detected.\nSource: UNKNOWN.\nSecurity protocols elevated."
+    }
+];
 
-function renderMenu() {
-    menu.innerHTML = "";
-    menuItems.forEach((item, i) => {
-        const div = document.createElement("div");
-        div.className = "menu-item" + (i === selectedIndex ? " selected" : "");
-        div.textContent = (i === selectedIndex ? "> " : "  ") + item.label;
-        menu.appendChild(div);
+const systemDiagnosticsText =
+"ROBCO INDUSTRIES (TM) DIAGNOSTICS\n" +
+"---------------------------------\n" +
+"CPU STATUS:        OK\n" +
+"MEMORY INTEGRITY:  OK\n" +
+"DISK STATUS:       OK\n" +
+"NETWORK LINK:      DEGRADED\n" +
+"\n" +
+"NOTE: External uplink unstable.\n";
+
+const archivesLockedText =
+"ARCHIVE ACCESS DENIED\n" +
+"---------------------\n" +
+"User clearance insufficient.\nContact your system administrator.\n";
+
+const hackingWords = [
+    "PROTECT", "SYSTEM", "ACCESS", "VAULT", "ROBOTS",
+    "SECURE", "TERMINAL", "NETWORK", "OVERRIDE", "ENCRYPT"
+];
+
+const hackingPassword = hackingWords[Math.floor(Math.random() * hackingWords.length)];
+const hackingAttemptsMax = 4;
+let hackingAttemptsLeft = hackingAttemptsMax;
+
+/* ================================
+   STATE
+================================ */
+
+let mode = "boot";      // boot | menu | logs | page | hack | error
+let selectedIndex = 0;
+let currentLogIndex = 0;
+
+/* ================================
+   DOM
+================================ */
+
+const contentEl = document.getElementById("content");
+const statusLine = document.getElementById("statusLine");
+
+/* ================================
+   SOUND HOOKS (OPTIONAL)
+   (Wire your own audio files)
+================================ */
+
+// const sndMove = new Audio("move.wav");
+// const sndSelect = new Audio("select.wav");
+// const sndError = new Audio("error.wav");
+// const sndBoot = new Audio("boot.wav");
+
+/* function play(sound) { sound && sound.play(); } */
+function play() {} // no-op by default
+
+/* ================================
+   RENDER HELPERS
+================================ */
+
+function setStatus(text) {
+    statusLine.textContent = text;
+}
+
+function renderBoot() {
+    const bootText =
+"ROBCO Industries (TM) Termlink\n" +
+"Initializing System...\n" +
+"Loading Modules...\n" +
+"Boot Complete.\n\n" +
+"Press any key to continue.\n";
+
+    typeOut(bootText, () => {
+        mode = "menu";
+        renderMenu();
+        setStatus("Use ↑/↓ and ENTER to navigate.");
     });
 }
 
-/* -------------------------------
-   KEYBOARD NAVIGATION
---------------------------------*/
-document.addEventListener("keydown", e => {
-    if (menu.style.display === "none") return;
+function renderMenu() {
+    mode = "menu";
+    let out = "";
+    out += "Welcome to ROBCO Industries (TM) Termlink\n";
+    out += "------------------------------------------\n";
+    out += "Select an option:\n\n";
 
-    if (e.key === "ArrowDown") {
-        selectedIndex = (selectedIndex + 1) % menuItems.length;
-        renderMenu();
+    menuItems.forEach((item, i) => {
+        const prefix = (i === selectedIndex) ? "> " : "  ";
+        const lockedMark = item.locked ? " [LOCKED]" : "";
+        out += prefix + item.label + lockedMark + "\n";
+    });
+
+    contentEl.textContent = out;
+}
+
+function renderLogs() {
+    mode = "logs";
+    const log = logsData[currentLogIndex];
+    let out = "";
+    out += "LOG ENTRIES\n";
+    out += "-----------\n\n";
+    out += log.title + "\n\n";
+    out += log.body + "\n\n";
+    out += "[←/→] Switch logs   [ESC] Back\n";
+    contentEl.textContent = out;
+    setStatus("Viewing log " + (currentLogIndex + 1) + " of " + logsData.length);
+}
+
+function renderPage(id) {
+    mode = "page";
+    let out = "";
+    if (id === "system") {
+        out += systemDiagnosticsText;
+    } else if (id === "archives") {
+        if (menuItems.find(m => m.id === "archives").locked) {
+            out += archivesLockedText;
+        }
     }
-    if (e.key === "ArrowUp") {
-        selectedIndex = (selectedIndex - 1 + menuItems.length) % menuItems.length;
+    out += "\n[ESC] Return to main menu\n";
+    contentEl.textContent = out;
+    setStatus("Page: " + id.toUpperCase());
+}
+
+function renderError(message) {
+    mode = "error";
+    let out = "";
+    out += "!!! TERMINAL ERROR !!!\n";
+    out += "-----------------------\n\n";
+    out += message + "\n\n";
+    out += "[ESC] Return to main menu\n";
+    contentEl.textContent = out;
+    setStatus("Error state");
+}
+
+function renderHackIntro() {
+    mode = "hack";
+    hackingAttemptsLeft = hackingAttemptsMax;
+
+    let out = "";
+    out += "SECURITY GATEWAY\n";
+    out += "----------------\n";
+    out += "Attempts remaining: " + hackingAttemptsLeft + "\n\n";
+    out += "Guess the password:\n\n";
+
+    hackingWords.forEach(w => {
+        out += w + "\n";
+    });
+
+    out += "\nType your guess and press ENTER.\n";
+    out += "Input: ";
+    contentEl.textContent = out;
+    attachInputCursor();
+    setStatus("Hacking: attempts remaining " + hackingAttemptsLeft);
+}
+
+function attachInputCursor(current = "") {
+    contentEl.innerHTML = contentEl.textContent.replace(/Input:.*$/s, "Input: " + current) +
+                          '<span class="cursor">█</span>';
+}
+
+/* ================================
+   TYPEWRITER FOR BOOT
+================================ */
+
+function typeOut(text, cb) {
+    contentEl.textContent = "";
+    let i = 0;
+    const interval = setInterval(() => {
+        contentEl.textContent += text[i] || "";
+        i++;
+        if (i >= text.length) {
+            clearInterval(interval);
+            if (cb) cb();
+        }
+    }, 18);
+}
+
+/* ================================
+   INPUT HANDLING
+================================ */
+
+let hackBuffer = "";
+
+document.addEventListener("keydown", (e) => {
+    if (mode === "boot") {
+        // play(sndBoot);
         renderMenu();
+        mode = "menu";
+        return;
     }
-    if (e.key === "Enter") {
-        window.location.href = menuItems[selectedIndex].url;
+
+    if (mode === "menu") {
+        if (e.key === "ArrowDown") {
+            selectedIndex = (selectedIndex + 1) % menuItems.length;
+            renderMenu();
+            // play(sndMove);
+        } else if (e.key === "ArrowUp") {
+            selectedIndex = (selectedIndex - 1 + menuItems.length) % menuItems.length;
+            renderMenu();
+            // play(sndMove);
+        } else if (e.key === "Enter") {
+            const item = menuItems[selectedIndex];
+            // play(sndSelect);
+            handleMenuSelect(item);
+        }
+        return;
+    }
+
+    if (mode === "logs") {
+        if (e.key === "ArrowRight") {
+            currentLogIndex = (currentLogIndex + 1) % logsData.length;
+            renderLogs();
+        } else if (e.key === "ArrowLeft") {
+            currentLogIndex = (currentLogIndex - 1 + logsData.length) % logsData.length;
+            renderLogs();
+        } else if (e.key === "Escape") {
+            renderMenu();
+        }
+        return;
+    }
+
+    if (mode === "page" || mode === "error") {
+        if (e.key === "Escape") {
+            renderMenu();
+        }
+        return;
+    }
+
+    if (mode === "hack") {
+        if (e.key === "Escape") {
+            renderMenu();
+            return;
+        }
+
+        if (e.key === "Backspace") {
+            hackBuffer = hackBuffer.slice(0, -1);
+            attachInputCursor(hackBuffer);
+            e.preventDefault();
+            return;
+        }
+
+        if (e.key === "Enter") {
+            processHackGuess();
+            return;
+        }
+
+        if (e.key.length === 1 && /[A-Za-z]/.test(e.key)) {
+            hackBuffer += e.key.toUpperCase();
+            attachInputCursor(hackBuffer);
+        }
+        return;
     }
 });
 
-/* -------------------------------
-   SHOW MENU AFTER BOOT
---------------------------------*/
-setTimeout(() => {
-    document.getElementById("boot").style.display = "none";
-    menu.style.display = "block";
-    renderMenu();
-}, 2300);
-</script>
+function handleMenuSelect(item) {
+    if (item.locked) {
+        // play(sndError);
+        renderError("ACCESS TO \"" + item.label.toUpperCase() + "\" IS RESTRICTED.");
+        return;
+    }
 
+    switch (item.type) {
+        case "logs":
+            currentLogIndex = 0;
+            renderLogs();
+            break;
+        case "page":
+            renderPage(item.id);
+            break;
+        case "hack":
+            hackBuffer = "";
+            renderHackIntro();
+            break;
+        case "exit":
+            renderError("TERMINAL SESSION ENDED.\nYou may now close this window.");
+            break;
+        default:
+            renderError("UNKNOWN MENU ACTION.");
+    }
+}
+
+/* ================================
+   HACKING LOGIC
+================================ */
+
+function likeness(a, b) {
+    let same = 0;
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+        if (a[i] === b[i]) same++;
+    }
+    return same;
+}
+
+function processHackGuess() {
+    const guess = hackBuffer;
+    hackBuffer = "";
+
+    if (!guess) {
+        attachInputCursor("");
+        return;
+    }
+
+    if (!hackingWords.includes(guess)) {
+        // play(sndError);
+        appendHackLine("\n" + guess + "  >> INVALID ENTRY");
+        attachInputCursor("");
+        return;
+    }
+
+    if (guess === hackingPassword) {
+        appendHackLine("\n" + guess + "  >> ACCESS GRANTED");
+        appendHackLine("\nSECURITY OVERRIDE ENABLED.\n[ESC] Return to main menu.");
+        setStatus("Security unlocked.");
+        mode = "page"; // treat as page-like state
+        return;
+    }
+
+    hackingAttemptsLeft--;
+    const like = likeness(guess, hackingPassword);
+    appendHackLine("\n" + guess + "  >> LIKENESS=" + like);
+    setStatus("Hacking: attempts remaining " + hackingAttemptsLeft);
+
+    if (hackingAttemptsLeft <= 0) {
+        // play(sndError);
+        renderError("SECURITY LOCKOUT.\nTerminal temporarily disabled.");
+    } else {
+        attachInputCursor("");
+    }
+}
+
+function appendHackLine(text) {
+    contentEl.textContent += text;
+}
+
+/* ================================
+   INIT
+================================ */
+
+renderBoot();
+</script>
 </body>
 </html>
