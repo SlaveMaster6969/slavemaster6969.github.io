@@ -82,31 +82,13 @@
         line-height: 1.4;
     }
 
-    .hidden { display: none; }
-
-    .title {
-        font-size: 22px;
-        margin-bottom: 1em;
-    }
-
-    .divider {
-        margin: 0.5em 0 1em 0;
-    }
-
-    .menu-item {
-        padding: 2px 0;
-    }
-
-    .selected {
-        background: rgba(51,255,102,0.25);
-    }
-
     .status-line {
         position: absolute;
         bottom: 18px;
         left: 40px;
         font-size: 14px;
         opacity: 0.8;
+        z-index: 2;
     }
 
     .cursor {
@@ -120,9 +102,8 @@
         51%,100% { opacity: 0; }
     }
 
-    .log-entry-title {
-        margin-bottom: 0.5em;
-        text-decoration: underline;
+    .selected {
+        background: rgba(51,255,102,0.25);
     }
 
     .error {
@@ -132,6 +113,16 @@
 
     .locked {
         opacity: 0.6;
+    }
+
+    .hack-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        column-gap: 4ch;
+    }
+
+    .hack-col {
+        white-space: pre;
     }
 </style>
 </head>
@@ -145,8 +136,10 @@
 
 <script>
 /* ================================
-   CONFIG: TERMINAL STRUCTURE
+   CONFIG
 ================================ */
+
+const TYPE_SPEED = 12; // ms per char (fast typewriter)
 
 const menuItems = [
     { id: "logs",      label: "Access Logs",        type: "logs" },
@@ -164,6 +157,10 @@ const logsData = [
     {
         title: "LOG 02 - INCIDENT REPORT",
         body: "Unauthorized access attempt detected.\nSource: UNKNOWN.\nSecurity protocols elevated."
+    },
+    {
+        title: "LOG 03 - UPLINK FAILURE",
+        body: "External network uplink lost.\nFallback to local-only mode.\nOperator notification pending."
     }
 ];
 
@@ -182,12 +179,14 @@ const archivesLockedText =
 "---------------------\n" +
 "User clearance insufficient.\nContact your system administrator.\n";
 
-const hackingWords = [
+const hackingWordsBase = [
     "PROTECT", "SYSTEM", "ACCESS", "VAULT", "ROBOTS",
-    "SECURE", "TERMINAL", "NETWORK", "OVERRIDE", "ENCRYPT"
+    "SECURE", "TERMINAL", "NETWORK", "OVERRIDE", "ENCRYPT",
+    "FISSION", "CONTROL", "COMMAND", "FAILURE", "UPLINK"
 ];
 
-const hackingPassword = hackingWords[Math.floor(Math.random() * hackingWords.length)];
+let hackingWords = [];
+let hackingPassword = "";
 const hackingAttemptsMax = 4;
 let hackingAttemptsLeft = hackingAttemptsMax;
 
@@ -195,9 +194,12 @@ let hackingAttemptsLeft = hackingAttemptsMax;
    STATE
 ================================ */
 
-let mode = "boot";      // boot | menu | logs | page | hack | error
+let mode = "boot";      // boot | loading | menu | logs | page | hack | error
 let selectedIndex = 0;
 let currentLogIndex = 0;
+let typing = false;
+let queuedRender = null;
+let hackBuffer = "";
 
 /* ================================
    DOM
@@ -207,40 +209,102 @@ const contentEl = document.getElementById("content");
 const statusLine = document.getElementById("statusLine");
 
 /* ================================
-   SOUND HOOKS (OPTIONAL)
-   (Wire your own audio files)
-================================ */
-
-// const sndMove = new Audio("move.wav");
-// const sndSelect = new Audio("select.wav");
-// const sndError = new Audio("error.wav");
-// const sndBoot = new Audio("boot.wav");
-
-/* function play(sound) { sound && sound.play(); } */
-function play() {} // no-op by default
-
-/* ================================
-   RENDER HELPERS
+   UTIL: TYPEWRITER
 ================================ */
 
 function setStatus(text) {
     statusLine.textContent = text;
 }
 
+function typeText(text, cb, speed = TYPE_SPEED) {
+    typing = true;
+    contentEl.textContent = "";
+    let i = 0;
+    const interval = setInterval(() => {
+        contentEl.textContent += text[i] || "";
+        i++;
+        if (i >= text.length) {
+            clearInterval(interval);
+            typing = false;
+            if (cb) cb();
+            if (queuedRender) {
+                const fn = queuedRender;
+                queuedRender = null;
+                fn();
+            }
+        }
+    }, speed);
+}
+
+function typeHTML(html, cb, speed = TYPE_SPEED) {
+    typing = true;
+    contentEl.innerHTML = "";
+    let i = 0;
+    const interval = setInterval(() => {
+        contentEl.innerHTML = html.slice(0, i);
+        i++;
+        if (i >= html.length) {
+            clearInterval(interval);
+            typing = false;
+            if (cb) cb();
+            if (queuedRender) {
+                const fn = queuedRender;
+                queuedRender = null;
+                fn();
+            }
+        }
+    }, speed);
+}
+
+function safeRender(fn) {
+    if (typing) {
+        queuedRender = fn;
+    } else {
+        fn();
+    }
+}
+
+/* ================================
+   BOOT + LOADING
+================================ */
+
 function renderBoot() {
+    mode = "boot";
     const bootText =
 "ROBCO Industries (TM) Termlink\n" +
 "Initializing System...\n" +
 "Loading Modules...\n" +
 "Boot Complete.\n\n" +
 "Press any key to continue.\n";
-
-    typeOut(bootText, () => {
-        mode = "menu";
-        renderMenu();
-        setStatus("Use ↑/↓ and ENTER to navigate.");
+    typeText(bootText, () => {
+        setStatus("Press any key to continue.");
     });
 }
+
+function renderLoading(nextModeFn, label = "LOADING") {
+    mode = "loading";
+    const dots = "...";
+    let text =
+label + "\n" +
+"----------------\n" +
+"Please wait";
+    let i = 0;
+    typeText(text, () => {
+        const interval = setInterval(() => {
+            if (mode !== "loading") { clearInterval(interval); return; }
+            i = (i + 1) % (dots.length + 1);
+            contentEl.textContent = text + dots.slice(0, i);
+        }, 200);
+        setTimeout(() => {
+            clearInterval(interval);
+            safeRender(nextModeFn);
+        }, 1200);
+    }, 8);
+}
+
+/* ================================
+   MENU
+================================ */
 
 function renderMenu() {
     mode = "menu";
@@ -255,8 +319,14 @@ function renderMenu() {
         out += prefix + item.label + lockedMark + "\n";
     });
 
-    contentEl.textContent = out;
+    typeText(out, () => {
+        setStatus("Use ↑/↓ and ENTER to navigate.");
+    });
 }
+
+/* ================================
+   LOGS
+================================ */
 
 function renderLogs() {
     mode = "logs";
@@ -267,9 +337,14 @@ function renderLogs() {
     out += log.title + "\n\n";
     out += log.body + "\n\n";
     out += "[←/→] Switch logs   [ESC] Back\n";
-    contentEl.textContent = out;
-    setStatus("Viewing log " + (currentLogIndex + 1) + " of " + logsData.length);
+    typeText(out, () => {
+        setStatus("Viewing log " + (currentLogIndex + 1) + " of " + logsData.length);
+    });
 }
+
+/* ================================
+   PAGES
+================================ */
 
 function renderPage(id) {
     mode = "page";
@@ -279,12 +354,19 @@ function renderPage(id) {
     } else if (id === "archives") {
         if (menuItems.find(m => m.id === "archives").locked) {
             out += archivesLockedText;
+        } else {
+            out += "ARCHIVED MESSAGES\n-----------------\n(No data.)\n";
         }
     }
     out += "\n[ESC] Return to main menu\n";
-    contentEl.textContent = out;
-    setStatus("Page: " + id.toUpperCase());
+    typeText(out, () => {
+        setStatus("Page: " + id.toUpperCase());
+    });
 }
+
+/* ================================
+   ERROR
+================================ */
 
 function renderError(message) {
     mode = "error";
@@ -293,79 +375,162 @@ function renderError(message) {
     out += "-----------------------\n\n";
     out += message + "\n\n";
     out += "[ESC] Return to main menu\n";
-    contentEl.textContent = out;
-    setStatus("Error state");
+    typeText(out, () => {
+        setStatus("Error state");
+    });
+}
+
+/* ================================
+   HACKING (FO4-STYLE)
+================================ */
+
+function initHack() {
+    // pick subset of words
+    hackingWords = [];
+    const pool = [...hackingWordsBase];
+    while (hackingWords.length < 10 && pool.length) {
+        const idx = Math.floor(Math.random() * pool.length);
+        hackingWords.push(pool.splice(idx, 1)[0]);
+    }
+    hackingPassword = hackingWords[Math.floor(Math.random() * hackingWords.length)];
+    hackingAttemptsLeft = hackingAttemptsMax;
+    hackBuffer = "";
+}
+
+function generateHackGrid() {
+    // FO4-ish: hex addresses + random chars + embedded words
+    const cols = 2;
+    const rows = 16;
+    const colWidth = 24;
+    const charset = "{}[]()<>!@#$%^&*+-/\\|;:,.ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const gridCols = [[], []];
+
+    function randomChar() {
+        return charset[Math.floor(Math.random() * charset.length)];
+    }
+
+    // start addresses
+    let baseAddr = 0xF7A0;
+    for (let c = 0; c < cols; c++) {
+        let addr = baseAddr + c * 0x10;
+        for (let r = 0; r < rows; r++) {
+            let line = "0x" + addr.toString(16).toUpperCase().padStart(4, "0") + " ";
+            let chars = "";
+            for (let i = 0; i < colWidth; i++) chars += randomChar();
+            gridCols[c].push({ addr, chars });
+            addr += 0x10;
+        }
+    }
+
+    // embed words randomly
+    hackingWords.forEach(word => {
+        const c = Math.floor(Math.random() * cols);
+        const r = Math.floor(Math.random() * rows);
+        const line = gridCols[c][r];
+        const maxStart = colWidth - word.length;
+        const start = Math.floor(Math.random() * Math.max(1, maxStart));
+        let charsArr = line.chars.split("");
+        for (let i = 0; i < word.length; i++) {
+            charsArr[start + i] = word[i];
+        }
+        line.chars = charsArr.join("");
+    });
+
+    let colHtml = ["", ""];
+    for (let c = 0; c < cols; c++) {
+        gridCols[c].forEach(row => {
+            colHtml[c] +=
+                "0x" + row.addr.toString(16).toUpperCase().padStart(4, "0") +
+                " " + row.chars + "\n";
+        });
+    }
+
+    return `
+SECURITY GATEWAY
+----------------
+Attempts remaining: ${hackingAttemptsLeft}
+
+${wrapHackGrid(colHtml[0], colHtml[1])}
+
+GUESS THE PASSWORD:
+Type your guess and press ENTER.
+Input: `;
+}
+
+function wrapHackGrid(col1, col2) {
+    // We'll render as two columns using spans and CSS grid
+    const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return `<div class="hack-grid">
+<div class="hack-col">${esc(col1)}</div>
+<div class="hack-col">${esc(col2)}</div>
+</div>`;
 }
 
 function renderHackIntro() {
     mode = "hack";
-    hackingAttemptsLeft = hackingAttemptsMax;
-
-    let out = "";
-    out += "SECURITY GATEWAY\n";
-    out += "----------------\n";
-    out += "Attempts remaining: " + hackingAttemptsLeft + "\n\n";
-    out += "Guess the password:\n\n";
-
-    hackingWords.forEach(w => {
-        out += w + "\n";
-    });
-
-    out += "\nType your guess and press ENTER.\n";
-    out += "Input: ";
-    contentEl.textContent = out;
-    attachInputCursor();
-    setStatus("Hacking: attempts remaining " + hackingAttemptsLeft);
+    initHack();
+    const html = generateHackGrid();
+    typeHTML(html + "\n", () => {
+        attachInputCursor();
+        setStatus("Hacking: attempts remaining " + hackingAttemptsLeft);
+    }, 2);
 }
 
 function attachInputCursor(current = "") {
-    contentEl.innerHTML = contentEl.textContent.replace(/Input:.*$/s, "Input: " + current) +
-                          '<span class="cursor">█</span>';
+    const text = contentEl.innerHTML;
+    const idx = text.lastIndexOf("Input:");
+    let base = text;
+    if (idx !== -1) {
+        base = text.slice(0, idx) + "Input: " + current;
+    }
+    contentEl.innerHTML = base + '<span class="cursor">█</span>';
 }
 
-/* ================================
-   TYPEWRITER FOR BOOT
-================================ */
+function likeness(a, b) {
+    let same = 0;
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+        if (a[i] === b[i]) same++;
+    }
+    return same;
+}
 
-function typeOut(text, cb) {
-    contentEl.textContent = "";
-    let i = 0;
-    const interval = setInterval(() => {
-        contentEl.textContent += text[i] || "";
-        i++;
-        if (i >= text.length) {
-            clearInterval(interval);
-            if (cb) cb();
-        }
-    }, 18);
+function appendHackLine(text) {
+    const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const base = contentEl.innerHTML.replace(/<span class="cursor">█<\/span>/, "");
+    contentEl.innerHTML = base + esc(text);
 }
 
 /* ================================
    INPUT HANDLING
 ================================ */
 
-let hackBuffer = "";
-
 document.addEventListener("keydown", (e) => {
+    if (typing && mode !== "hack") {
+        // allow skip typing by pressing any key
+        typing = false;
+        queuedRender && queuedRender();
+        queuedRender = null;
+        return;
+    }
+
     if (mode === "boot") {
-        // play(sndBoot);
-        renderMenu();
-        mode = "menu";
+        renderLoading(renderMenu, "LOADING TERMINAL");
+        return;
+    }
+
+    if (mode === "loading") {
         return;
     }
 
     if (mode === "menu") {
         if (e.key === "ArrowDown") {
             selectedIndex = (selectedIndex + 1) % menuItems.length;
-            renderMenu();
-            // play(sndMove);
+            safeRender(renderMenu);
         } else if (e.key === "ArrowUp") {
             selectedIndex = (selectedIndex - 1 + menuItems.length) % menuItems.length;
-            renderMenu();
-            // play(sndMove);
+            safeRender(renderMenu);
         } else if (e.key === "Enter") {
             const item = menuItems[selectedIndex];
-            // play(sndSelect);
             handleMenuSelect(item);
         }
         return;
@@ -374,26 +539,26 @@ document.addEventListener("keydown", (e) => {
     if (mode === "logs") {
         if (e.key === "ArrowRight") {
             currentLogIndex = (currentLogIndex + 1) % logsData.length;
-            renderLogs();
+            safeRender(renderLogs);
         } else if (e.key === "ArrowLeft") {
             currentLogIndex = (currentLogIndex - 1 + logsData.length) % logsData.length;
-            renderLogs();
+            safeRender(renderLogs);
         } else if (e.key === "Escape") {
-            renderMenu();
+            renderLoading(renderMenu, "RETURNING");
         }
         return;
     }
 
     if (mode === "page" || mode === "error") {
         if (e.key === "Escape") {
-            renderMenu();
+            renderLoading(renderMenu, "RETURNING");
         }
         return;
     }
 
     if (mode === "hack") {
         if (e.key === "Escape") {
-            renderMenu();
+            renderLoading(renderMenu, "ABORTING");
             return;
         }
 
@@ -419,7 +584,6 @@ document.addEventListener("keydown", (e) => {
 
 function handleMenuSelect(item) {
     if (item.locked) {
-        // play(sndError);
         renderError("ACCESS TO \"" + item.label.toUpperCase() + "\" IS RESTRICTED.");
         return;
     }
@@ -427,14 +591,13 @@ function handleMenuSelect(item) {
     switch (item.type) {
         case "logs":
             currentLogIndex = 0;
-            renderLogs();
+            renderLoading(renderLogs, "OPENING LOGS");
             break;
         case "page":
-            renderPage(item.id);
+            renderLoading(() => renderPage(item.id), "OPENING");
             break;
         case "hack":
-            hackBuffer = "";
-            renderHackIntro();
+            renderLoading(renderHackIntro, "INITIALIZING SECURITY");
             break;
         case "exit":
             renderError("TERMINAL SESSION ENDED.\nYou may now close this window.");
@@ -448,14 +611,6 @@ function handleMenuSelect(item) {
    HACKING LOGIC
 ================================ */
 
-function likeness(a, b) {
-    let same = 0;
-    for (let i = 0; i < Math.min(a.length, b.length); i++) {
-        if (a[i] === b[i]) same++;
-    }
-    return same;
-}
-
 function processHackGuess() {
     const guess = hackBuffer;
     hackBuffer = "";
@@ -466,17 +621,16 @@ function processHackGuess() {
     }
 
     if (!hackingWords.includes(guess)) {
-        // play(sndError);
         appendHackLine("\n" + guess + "  >> INVALID ENTRY");
         attachInputCursor("");
         return;
     }
 
     if (guess === hackingPassword) {
-        appendHackLine("\n" + guess + "  >> ACCESS GRANTED");
-        appendHackLine("\nSECURITY OVERRIDE ENABLED.\n[ESC] Return to main menu.");
+        appendHackLine("\n" + guess + "  >> ACCESS GRANTED\n");
+        appendHackLine("\nSECURITY OVERRIDE ENABLED.\n[ESC] Return to main menu.\n");
         setStatus("Security unlocked.");
-        mode = "page"; // treat as page-like state
+        mode = "page";
         return;
     }
 
@@ -486,15 +640,10 @@ function processHackGuess() {
     setStatus("Hacking: attempts remaining " + hackingAttemptsLeft);
 
     if (hackingAttemptsLeft <= 0) {
-        // play(sndError);
         renderError("SECURITY LOCKOUT.\nTerminal temporarily disabled.");
     } else {
         attachInputCursor("");
     }
-}
-
-function appendHackLine(text) {
-    contentEl.textContent += text;
 }
 
 /* ================================
