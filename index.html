@@ -10,86 +10,142 @@
         width: 100%;
         height: 100%;
         background: black;
-        color: #33ff66;
-        font-family: "Courier New", monospace;
         overflow: hidden;
+        font-family: "Courier New", monospace;
+        color: #33ff66;
     }
 
-    .crt {
+    /* CRT container */
+    #crt {
         width: 100%;
         height: 100%;
         padding: 40px;
         box-sizing: border-box;
-        background: black;
-        text-shadow: 0 0 8px #33ff66;
         position: relative;
+        text-shadow: 0 0 8px #33ff66;
+        filter: contrast(1.2) brightness(1.1);
     }
 
     /* Scanlines */
-    .crt::after {
+    #crt::after {
         content: "";
         position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
+        inset: 0;
         pointer-events: none;
         background: repeating-linear-gradient(
             to bottom,
-            rgba(0, 0, 0, 0.1) 0px,
-            rgba(0, 0, 0, 0.1) 2px,
-            rgba(0, 0, 0, 0.2) 3px
+            rgba(0,0,0,0.15) 0px,
+            rgba(0,0,0,0.15) 2px,
+            rgba(0,0,0,0.25) 3px
         );
         mix-blend-mode: multiply;
     }
 
-    h1 {
-        margin: 0 0 20px 0;
+    /* Boot animation */
+    #boot {
+        white-space: pre;
+        font-size: 20px;
+        line-height: 1.4;
+        animation: boot 2.2s steps(40) forwards;
+        overflow: hidden;
+        width: 0;
+    }
+
+    @keyframes boot {
+        from { width: 0; }
+        to { width: 100%; }
+    }
+
+    /* Menu */
+    #menu {
+        display: none;
+        margin-top: 20px;
         font-size: 22px;
     }
 
-    .menu {
-        margin-top: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+    .menu-item {
+        padding: 4px 0;
     }
 
-    .menu a {
-        color: #33ff66;
-        text-decoration: none;
-        font-size: 20px;
-        padding: 6px 0;
-        display: inline-block;
-        transition: 0.1s;
-    }
-
-    .menu a:hover {
-        background: rgba(51, 255, 102, 0.2);
-        padding-left: 10px;
-    }
-
-    .footer {
-        position: absolute;
-        bottom: 20px;
-        left: 40px;
-        font-size: 16px;
-        opacity: 0.8;
+    .selected {
+        background: rgba(51,255,102,0.25);
     }
 </style>
 </head>
 <body>
-<div class="crt">
-    <h1>Welcome to ROBCO Industries (TM) Termlink</h1>
-    <div>------------------------------------------</div>
-    <div>Select an option:</div>
 
-    <div class="menu">
-        <!-- ADD NEW BUTTONS HERE -->
-        <a href="/file.html">Open File</a>
-        <a href="https://example.com">Visit Example.com</a>
-        <!-- Just copy/paste to add more -->
+<div id="crt">
+    <div id="boot">
+ROBCO Industries (TM) Termlink
+Initializing System...
+Loading Modules...
+Boot Complete.
+
+Select an option:
     </div>
 
-    <div class="footer">ROBCO Industries ©2075</div>
+    <div id="menu"></div>
 </div>
+
+<script>
+/* -------------------------------
+   MODULAR MENU SYSTEM
+   Add new pages here:
+--------------------------------*/
+const menuItems = [
+    { label: "Ammunition", url: "/ammo.html" },
+    { label: "Crafting Materials", url: "/craft.html" },
+    { label: "Items", url: "/items.html" },
+    { label: "Collectibles", url: "/collect.html" },
+    { label: "Player Cheats", url: "/player.html" },
+    { label: "Misc Cheats", url: "/misc.html" },
+    { label: "Changelog", url: "/changelog.html" }
+];
+
+/* -------------------------------
+   BUILD MENU
+--------------------------------*/
+const menu = document.getElementById("menu");
+let selectedIndex = 0;
+
+function renderMenu() {
+    menu.innerHTML = "";
+    menuItems.forEach((item, i) => {
+        const div = document.createElement("div");
+        div.className = "menu-item" + (i === selectedIndex ? " selected" : "");
+        div.textContent = (i === selectedIndex ? "> " : "  ") + item.label;
+        menu.appendChild(div);
+    });
+}
+
+/* -------------------------------
+   KEYBOARD NAVIGATION
+--------------------------------*/
+document.addEventListener("keydown", e => {
+    if (menu.style.display === "none") return;
+
+    if (e.key === "ArrowDown") {
+        selectedIndex = (selectedIndex + 1) % menuItems.length;
+        renderMenu();
+    }
+    if (e.key === "ArrowUp") {
+        selectedIndex = (selectedIndex - 1 + menuItems.length) % menuItems.length;
+        renderMenu();
+    }
+    if (e.key === "Enter") {
+        window.location.href = menuItems[selectedIndex].url;
+    }
+});
+
+/* -------------------------------
+   SHOW MENU AFTER BOOT
+--------------------------------*/
+setTimeout(() => {
+    document.getElementById("boot").style.display = "none";
+    menu.style.display = "block";
+    renderMenu();
+}, 2300);
+</script>
+
 </body>
 </html>
